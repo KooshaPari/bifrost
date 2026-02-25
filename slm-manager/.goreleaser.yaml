@@ -1,0 +1,121 @@
+version: 2
+
+project_name: slm-manager
+
+before:
+  hooks:
+    - go mod tidy
+    # Build frontend
+    - cd frontend && npm install && npm run build
+
+builds:
+  - id: slm-manager-windows
+    main: .
+    binary: slm-manager
+    goos:
+      - windows
+    goarch:
+      - amd64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.Commit={{.ShortCommit}}
+      - -X main.BuildDate={{.Date}}
+      - -H=windowsgui
+    tags:
+      - desktop
+      - production
+    hooks:
+      # Copy slm-server.exe alongside the manager
+      post:
+        - cmd: cp ../slm-server/slm-server.exe {{ dir .Path }}/
+          output: true
+
+  - id: slm-manager-darwin
+    main: .
+    binary: slm-manager
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.Commit={{.ShortCommit}}
+      - -X main.BuildDate={{.Date}}
+    tags:
+      - desktop
+      - production
+
+  - id: slm-manager-linux
+    main: .
+    binary: slm-manager
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.Commit={{.ShortCommit}}
+      - -X main.BuildDate={{.Date}}
+    tags:
+      - desktop
+      - production
+
+archives:
+  - id: slm-manager-archive
+    format: zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+      # Include slm-server binary for Windows
+      - src: ../slm-server/slm-server*
+        dst: .
+        strip_parent: true
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+release:
+  github:
+    owner: kooshapari
+    name: bifrost-extensions
+  draft: false
+  prerelease: auto
+  name_template: "SLM Manager v{{.Version}}"
+  header: |
+    ## SLM Manager v{{.Version}}
+    
+    Desktop application for managing SLM routing server and vLLM backend.
+    
+    ### Features
+    - 🖥️ System tray application
+    - 🚀 Manages vLLM in WSL2 (Windows)
+    - 🔄 Self-updating via GitHub Releases
+    - 📊 Real-time service monitoring
+    
+    ### Installation
+    
+    **Windows:**
+    1. Download `slm-manager_{{.Version}}_windows_amd64.zip`
+    2. Extract to `C:\slm-manager\`
+    3. Run `slm-manager.exe`
+    
+    **macOS:**
+    1. Download `slm-manager_{{.Version}}_darwin_arm64.zip` (Apple Silicon) or `_amd64.zip` (Intel)
+    2. Extract and move to Applications
+    3. Run `slm-manager`
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+

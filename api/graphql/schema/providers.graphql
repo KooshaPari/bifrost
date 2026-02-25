@@ -1,0 +1,113 @@
+# Provider-related types
+
+type Provider {
+  id: ID!
+  name: String!
+  displayName: String!
+  
+  # Status
+  status: ProviderStatus!
+  statusMessage: String
+  lastCheck: Time!
+  
+  # Models
+  models: [Model!]!
+  availableModels: Int!
+  totalModels: Int!
+  
+  # Accounts/credentials
+  accounts: [Account!]!
+  
+  # Rate limits (aggregate across accounts)
+  rateLimit: RateLimitInfo
+  
+  # Performance
+  metrics: ProviderMetrics
+  
+  # Configuration
+  baseUrl: String!
+  supportedFeatures: [String!]!
+  
+  # Metadata
+  metadata: JSON
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type Account {
+  id: ID!
+  provider: Provider!
+  name: String!
+  
+  # Status
+  active: Boolean!
+  lastUsed: Time
+  
+  # Quota
+  quotaRemaining: Float64
+  quotaLimit: Float64
+  quotaResetAt: Time
+  
+  # Rate limits for this account
+  rateLimit: RateLimitInfo
+  
+  # Allowed models (if restricted)
+  allowedModels: [String!]
+  
+  # Usage
+  usageThisMonth: Float64
+  usageLimit: Float64
+  
+  # Token expiry
+  tokenExpiresAt: Time
+  
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type RateLimitInfo {
+  remaining: Int!
+  limit: Int!
+  resetAt: Time!
+  unit: String!  # "requests", "tokens"
+}
+
+type ProviderMetrics {
+  # Latency
+  avgLatencyMs: Float64!
+  p50LatencyMs: Float64!
+  p99LatencyMs: Float64!
+  
+  # Reliability
+  errorRate: Float64!
+  uptime: Float64!  # Percentage
+  
+  # Throughput
+  requestsPerMinute: Float64!
+  tokensPerMinute: Float64!
+  
+  # Cost
+  avgCostPerRequest: Float64!
+  
+  # Time window
+  window: String!
+  updatedAt: Time!
+}
+
+# Health events for subscriptions
+type ProviderHealthEvent {
+  provider: Provider!
+  previousStatus: ProviderStatus!
+  currentStatus: ProviderStatus!
+  timestamp: Time!
+  reason: String
+  affectedModels: [Model!]!
+}
+
+type ModelAvailabilityEvent {
+  model: Model!
+  available: Boolean!
+  timestamp: Time!
+  reason: String
+}
+

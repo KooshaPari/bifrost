@@ -1,0 +1,156 @@
+# Benchmark-related types
+
+type Benchmark {
+  id: ID!
+  name: String!
+  description: String
+  
+  # What was benchmarked
+  models: [Model!]!
+  
+  # Results
+  results: [BenchmarkResult!]!
+  
+  # Configuration
+  config: BenchmarkConfig!
+  
+  # Status
+  status: BenchmarkStatus!
+  startedAt: Time
+  completedAt: Time
+  
+  # Summary
+  summary: BenchmarkSummary
+  
+  # Metadata
+  metadata: JSON
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type BenchmarkResult {
+  id: ID!
+  model: Model!
+  
+  # Metrics
+  metrics: [MetricResult!]!
+  
+  # Aggregate scores
+  overallScore: Float64
+  rank: Int
+  
+  # Sample outputs
+  samples: [BenchmarkSample!]!
+  
+  # Timing
+  duration: Int!  # milliseconds
+  tokenCount: Int!
+}
+
+type MetricResult {
+  metric: MetricType!
+  value: Float64!
+  unit: String!
+  
+  # Statistical info
+  stdDev: Float64
+  confidence: Float64
+  sampleSize: Int!
+}
+
+type BenchmarkSample {
+  id: ID!
+  prompt: String!
+  expectedOutput: String
+  actualOutput: String!
+  
+  # Scores
+  score: Float64
+  latencyMs: Int!
+  tokens: Int!
+  
+  # Evaluation
+  evaluation: SampleEvaluation
+}
+
+type SampleEvaluation {
+  correct: Boolean!
+  score: Float64!
+  feedback: String
+  evaluatedBy: String!  # "human", "llm-judge", "automated"
+}
+
+type BenchmarkConfig {
+  # Test set
+  datasetName: String!
+  sampleCount: Int!
+  
+  # Parameters
+  temperature: Float64!
+  maxTokens: Int!
+  
+  # Evaluation
+  evaluationMethod: String!
+  evaluatorModel: String
+  
+  # Timing
+  timeout: Int!
+  retries: Int!
+}
+
+type BenchmarkSummary {
+  # Winner
+  winner: Model
+  winnerScore: Float64
+  
+  # Comparisons
+  comparisons: [ModelComparison!]!
+  
+  # Key findings
+  findings: [String!]!
+  
+  # Statistics
+  totalSamples: Int!
+  totalTokens: Int!
+  totalCost: Float64!
+  totalDuration: Int!
+}
+
+enum BenchmarkStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+type BenchmarkConnection {
+  nodes: [Benchmark!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+# Input types
+input BenchmarkInput {
+  name: String!
+  description: String
+  modelIds: [ID!]!
+  config: BenchmarkConfigInput!
+}
+
+input BenchmarkConfigInput {
+  datasetName: String!
+  sampleCount: Int = 100
+  temperature: Float64 = 0.0
+  maxTokens: Int = 1024
+  evaluationMethod: String = "llm-judge"
+  evaluatorModel: String = "gpt-4o"
+  timeout: Int = 30000
+  retries: Int = 3
+}
+
+input DateRangeInput {
+  start: Time!
+  end: Time!
+}
+
