@@ -16,3 +16,7 @@ pre_merge_checks:
     mode: warning
   issue_assessment:
     mode: warning
+
+pr_validation:
+  block_on:
+    severity: info
