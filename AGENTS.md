@@ -593,6 +593,7 @@ func (p *MyPlugin) PreHook(ctx *context.Context, req *schemas.BifrostRequest) (*
   - `bot-review-trigger: <bot> <iso8601-time> <reason>`
 
 
+
 ## Review Bot Governance
 
 - Keep CodeRabbit PR blocking at the lowest level in `.coderabbit.yaml`: `pr_validation.block_on.severity: info`.
@@ -606,4 +607,3 @@ func (p *MyPlugin) PreHook(ctx *context.Context, req *schemas.BifrostRequest) (*
   - Minimum spacing: one retrigger comment every 120 seconds per repo.
   - On rate-limit response, stop sending new triggers in that repo, wait 15 minutes, then resume queue processing.
   - Do not post duplicate trigger comments while a prior trigger is pending.
-
