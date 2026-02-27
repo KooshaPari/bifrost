@@ -567,3 +567,43 @@ func (p *MyPlugin) PreHook(ctx *context.Context, req *schemas.BifrostRequest) (*
 | `schemas.BifrostRequest` | `bifrost/core/schemas/bifrost.go` |
 | `schemas.BifrostResponse` | `bifrost/core/schemas/bifrost.go` |
 
+
+<!-- PHENOTYPE_GOVERNANCE_OVERLAY_V1 -->
+## Phenotype Governance Overlay v1
+
+- Enforce `TDD + BDD + SDD` for all feature and workflow changes.
+- Enforce `Hexagonal + Clean + SOLID` boundaries by default.
+- Favor explicit failures over silent degradation; required dependencies must fail clearly when unavailable.
+- Keep local hot paths deterministic and low-latency; place distributed workflow logic behind durable orchestration boundaries.
+- Require policy gating, auditability, and traceable correlation IDs for agent and workflow actions.
+- Document architectural and protocol decisions before broad rollout changes.
+
+
+## Bot Review Retrigger and Rate-Limit Governance
+
+- Retrigger commands:
+  - CodeRabbit: `@coderabbitai full review`
+  - Gemini Code Assist: `@gemini-code-assist review` (fallback: `/gemini review`)
+- Rate-limit contract:
+  - Maximum one retrigger per bot per PR every 15 minutes.
+  - Before triggering, check latest PR comments for existing trigger markers and bot quota/rate-limit responses.
+  - If rate-limited, queue the retry for the later of 15 minutes or bot-provided retry time.
+  - After two consecutive rate-limit responses for the same bot/PR, stop auto-retries and post queued status with next attempt time.
+- Tracking marker required in PR comments for each trigger:
+  - `bot-review-trigger: <bot> <iso8601-time> <reason>`
+
+
+## Review Bot Governance
+
+- Keep CodeRabbit PR blocking at the lowest level in `.coderabbit.yaml`: `pr_validation.block_on.severity: info`.
+- Keep Gemini Code Assist severity at the lowest level in `.gemini/config.yaml`: `code_review.comment_severity_threshold: LOW`.
+- Retrigger commands:
+  - CodeRabbit: comment `@coderabbitai full review` on the PR.
+  - Gemini Code Assist (when enabled in the repo): comment `@gemini-code-assist review` on the PR.
+  - If comment-trigger is unavailable, retrigger both bots by pushing a no-op commit to the PR branch.
+- Rate-limit discipline:
+  - Use a FIFO queue for retriggers (oldest pending PR first).
+  - Minimum spacing: one retrigger comment every 120 seconds per repo.
+  - On rate-limit response, stop sending new triggers in that repo, wait 15 minutes, then resume queue processing.
+  - Do not post duplicate trigger comments while a prior trigger is pending.
+
