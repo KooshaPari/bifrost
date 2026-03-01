@@ -10,12 +10,7 @@ require (
 	github.com/hatchet-dev/hatchet v0.73.73
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/kooshapari/CLIProxyAPI/v7 v7.0.0
-<<<<<<< HEAD
-	github.com/KooshaPari/phenotype-go-middleware v0.0.0
-	github.com/KooshaPari/phenotype-go-config v0.0.0
-=======
 	github.com/KooshaPari/phenotype-go-kit v0.0.0
->>>>>>> f3490f1 (chore: add phenotype-go-kit dependency and fix replace directives for worktree)
 	github.com/maximhq/bifrost/core v1.2.30
 	github.com/nats-io/nats.go v1.47.0
 	github.com/neo4j/neo4j-go-driver/v5 v5.28.4
@@ -100,10 +95,4 @@ replace github.com/coder/agentapi => ../../agentapi-plusplus
 
 replace github.com/kooshapari/CLIProxyAPI/v7 => ../../CLIProxyAPI
 
-<<<<<<< HEAD
-replace github.com/KooshaPari/phenotype-go-middleware => ../../../template-commons/phenotype-go-middleware
-
-replace github.com/KooshaPari/phenotype-go-config => ../../../template-commons/phenotype-go-config
-=======
 replace github.com/KooshaPari/phenotype-go-kit => ../../template-commons/phenotype-go-kit
->>>>>>> f3490f1 (chore: add phenotype-go-kit dependency and fix replace directives for worktree)
