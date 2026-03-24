@@ -12,23 +12,23 @@ import (
 type BillingModel string
 
 const (
-	BillingPerToken          BillingModel = "per_token"
-	BillingPerRequest        BillingModel = "per_request"
+	BillingPerToken           BillingModel = "per_token"
+	BillingPerRequest         BillingModel = "per_request"
 	BillingSubscriptionBucket BillingModel = "subscription_bucket"
-	BillingCredits           BillingModel = "credits"
-	BillingPercentOnly       BillingModel = "percent_only"
-	BillingScarce            BillingModel = "scarce_premium"
+	BillingCredits            BillingModel = "credits"
+	BillingPercentOnly        BillingModel = "percent_only"
+	BillingScarce             BillingModel = "scarce_premium"
 )
 
 // LimitType represents the type of rate limit
 type LimitType string
 
 const (
-	LimitTokensPerMin   LimitType = "tokens_per_min"
-	LimitTokensPerHour  LimitType = "tokens_per_hour"
-	LimitTokensPerDay   LimitType = "tokens_per_day"
-	LimitRequestsPerMin LimitType = "requests_per_min"
-	LimitRequestsPerDay LimitType = "requests_per_day"
+	LimitTokensPerMin    LimitType = "tokens_per_min"
+	LimitTokensPerHour   LimitType = "tokens_per_hour"
+	LimitTokensPerDay    LimitType = "tokens_per_day"
+	LimitRequestsPerMin  LimitType = "requests_per_min"
+	LimitRequestsPerDay  LimitType = "requests_per_day"
 	LimitCreditsPerMonth LimitType = "credits_per_month"
 )
 
@@ -43,46 +43,46 @@ type AccountLimit struct {
 
 // EndpointInfo contains all information needed for cost calculation
 type EndpointInfo struct {
-	EndpointID      uuid.UUID
-	AccountID       uuid.UUID
-	ModelID         uuid.UUID
-	ModelName       string
-	
+	EndpointID uuid.UUID
+	AccountID  uuid.UUID
+	ModelID    uuid.UUID
+	ModelName  string
+
 	// Account info
-	AccountName     string
-	BillingModel    BillingModel
-	Limits          []AccountLimit
-	
+	AccountName  string
+	BillingModel BillingModel
+	Limits       []AccountLimit
+
 	// Pricing
 	PricingBasis    string  // "tokens", "requests", "credits", "included"
 	UnitPriceInput  float64 // per 1k tokens or per request
 	UnitPriceOutput float64
-	
+
 	// Performance
 	LatencyEstimateMS int
 	ThroughputTPS     float64
-	
+
 	// Priority
-	Priority     int
-	QualityTier  string // "budget", "standard", "premium", "experimental"
-	
+	Priority    int
+	QualityTier string // "budget", "standard", "premium", "experimental"
+
 	// Status
-	Status       string
-	IsHealthy    bool
+	Status    string
+	IsHealthy bool
 }
 
 // UsageSnapshot represents current usage for an account/endpoint
 type UsageSnapshot struct {
-	AccountID   uuid.UUID
-	EndpointID  *uuid.UUID // nil for account-level
-	WindowType  string
-	WindowStart time.Time
-	WindowEnd   time.Time
-	TokensIn    int64
-	TokensOut   int64
-	Requests    int
-	CreditsUsed float64
-	CostUSD     float64
+	AccountID        uuid.UUID
+	EndpointID       *uuid.UUID // nil for account-level
+	WindowType       string
+	WindowStart      time.Time
+	WindowEnd        time.Time
+	TokensIn         int64
+	TokensOut        int64
+	Requests         int
+	CreditsUsed      float64
+	CostUSD          float64
 	PercentRemaining *float64 // for percent-only APIs
 }
 
@@ -99,20 +99,20 @@ type CostRequest struct {
 
 // CostResult contains the cost calculation result for an endpoint
 type CostResult struct {
-	EndpointID       uuid.UUID
-	EndpointInfo     EndpointInfo
-	
+	EndpointID   uuid.UUID
+	EndpointInfo EndpointInfo
+
 	// Cost estimates
-	ExpectedCostUSD  float64
+	ExpectedCostUSD   float64
 	ExpectedLatencyMS int
-	
+
 	// Quota status
-	QuotaHeadroom    float64 // 0.0 to 1.0 (1.0 = full quota available)
-	AllowedForCall   bool
-	DenyReason       string
-	
+	QuotaHeadroom  float64 // 0.0 to 1.0 (1.0 = full quota available)
+	AllowedForCall bool
+	DenyReason     string
+
 	// Recommendations
-	IsPreferred      bool   // cost engine recommends this (e.g., underused subscription)
+	IsPreferred      bool // cost engine recommends this (e.g., underused subscription)
 	PreferenceReason string
 }
 
@@ -130,22 +130,21 @@ type BatchCostRequest struct {
 
 // BatchCostResult contains ranked endpoints
 type BatchCostResult struct {
-	Results         []CostResult
-	RecommendedID   uuid.UUID // top recommendation
-	FallbackIDs     []uuid.UUID
-	AllDenied       bool
-	DenyReason      string
+	Results       []CostResult
+	RecommendedID uuid.UUID // top recommendation
+	FallbackIDs   []uuid.UUID
+	AllDenied     bool
+	DenyReason    string
 }
 
 // WindowType for usage tracking
 type WindowType string
 
 const (
-	WindowMinute   WindowType = "minute"
-	WindowHour     WindowType = "hour"
-	WindowDay      WindowType = "day"
-	WindowWeek     WindowType = "week"
-	WindowMonth    WindowType = "month"
-	WindowPeriod   WindowType = "subscription_period"
+	WindowMinute WindowType = "minute"
+	WindowHour   WindowType = "hour"
+	WindowDay    WindowType = "day"
+	WindowWeek   WindowType = "week"
+	WindowMonth  WindowType = "month"
+	WindowPeriod WindowType = "subscription_period"
 )
-

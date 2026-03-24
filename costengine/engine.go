@@ -19,11 +19,11 @@ type Config struct {
 	// Default costs when pricing not specified (per 1k tokens)
 	DefaultInputCost  float64
 	DefaultOutputCost float64
-	
+
 	// Quota thresholds
 	SoftQuotaThreshold float64 // warn when below this (e.g., 0.2 = 20% remaining)
 	HardQuotaThreshold float64 // deny when below this (e.g., 0.05 = 5% remaining)
-	
+
 	// Premium settings
 	ScarceEndpointMultiplier float64 // effective cost multiplier for scarce endpoints
 	PreferUnderusedThreshold float64 // prefer endpoints with usage below this %
@@ -56,32 +56,32 @@ func (e *Engine) CalculateCost(ctx context.Context, req CostRequest) (*CostResul
 	if err != nil {
 		return nil, fmt.Errorf("get endpoint: %w", err)
 	}
-	
+
 	// Get account info
 	account, err := e.queries.GetProviderAccount(ctx, endpoint.AccountID)
 	if err != nil {
 		return nil, fmt.Errorf("get account: %w", err)
 	}
-	
+
 	// Get account limits
 	limits, err := e.queries.GetAccountLimits(ctx, endpoint.AccountID)
 	if err != nil {
 		return nil, fmt.Errorf("get limits: %w", err)
 	}
-	
+
 	// Build endpoint info
 	info := e.buildEndpointInfo(endpoint, account, limits)
-	
+
 	// Calculate cost
 	result := e.calculateSingleCost(ctx, info, req)
-	
+
 	return result, nil
 }
 
 // CalculateBatch evaluates multiple endpoints and returns ranked results
 func (e *Engine) CalculateBatch(ctx context.Context, req BatchCostRequest) (*BatchCostResult, error) {
 	results := make([]CostResult, 0, len(req.Candidates))
-	
+
 	for _, endpointID := range req.Candidates {
 		result, err := e.CalculateCost(ctx, CostRequest{
 			EndpointID:     endpointID,
@@ -97,14 +97,14 @@ func (e *Engine) CalculateBatch(ctx context.Context, req BatchCostRequest) (*Bat
 		}
 		results = append(results, *result)
 	}
-	
+
 	if len(results) == 0 {
 		return &BatchCostResult{
 			AllDenied:  true,
 			DenyReason: "no valid endpoints found",
 		}, nil
 	}
-	
+
 	// Sort by: allowed first, then preferred, then cost, then latency
 	sort.Slice(results, func(i, j int) bool {
 		if results[i].AllowedForCall != results[j].AllowedForCall {
@@ -118,15 +118,15 @@ func (e *Engine) CalculateBatch(ctx context.Context, req BatchCostRequest) (*Bat
 		}
 		return results[i].ExpectedLatencyMS < results[j].ExpectedLatencyMS
 	})
-	
+
 	// Limit results
 	if req.MaxResults > 0 && len(results) > req.MaxResults {
 		results = results[:req.MaxResults]
 	}
-	
+
 	// Build response
 	batch := &BatchCostResult{Results: results}
-	
+
 	// Find allowed endpoints
 	var allowed []CostResult
 	for _, r := range results {
@@ -134,7 +134,7 @@ func (e *Engine) CalculateBatch(ctx context.Context, req BatchCostRequest) (*Bat
 			allowed = append(allowed, r)
 		}
 	}
-	
+
 	if len(allowed) == 0 {
 		batch.AllDenied = true
 		batch.DenyReason = "all endpoints denied due to quota or policy"
@@ -144,7 +144,7 @@ func (e *Engine) CalculateBatch(ctx context.Context, req BatchCostRequest) (*Bat
 			batch.FallbackIDs = append(batch.FallbackIDs, allowed[i].EndpointID)
 		}
 	}
-	
+
 	return batch, nil
 }
 
@@ -204,4 +204,3 @@ func (e *Engine) buildEndpointInfo(ep sqlc.ModelEndpoint, acc sqlc.ProviderAccou
 
 	return info
 }
-
