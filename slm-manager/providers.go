@@ -78,8 +78,8 @@ func NewProviderManager(gatewayURL string) *ProviderManager {
 		services:        []ServiceDiscoveryInfo{},
 		cachedModels:    make(map[string][]ProviderModel),
 		lastModelFetch:  make(map[string]time.Time),
-		cacheTTL:        time.Hour,        // 1 hour cache TTL
-		refreshInterval: 5 * time.Minute,  // 5 minute refresh interval
+		cacheTTL:        time.Hour,       // 1 hour cache TTL
+		refreshInterval: 5 * time.Minute, // 5 minute refresh interval
 		stopRefresh:     make(chan struct{}),
 	}
 	pm.setDefaultProviderTypes()
@@ -514,4 +514,3 @@ func FetchOllamaModels(host string) []ModelInfo {
 	}
 	return models
 }
-

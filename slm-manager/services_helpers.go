@@ -51,8 +51,6 @@ func (a *App) waitForService(url string, timeout time.Duration) bool {
 	return false
 }
 
-
-
 // HealthCheck checks if services are responding
 func (a *App) HealthCheck() map[string]bool {
 	results := make(map[string]bool)
@@ -105,4 +103,3 @@ func (a *App) RestartAll() {
 	time.Sleep(1 * time.Second)
 	a.StartAll()
 }
-

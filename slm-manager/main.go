@@ -10,4 +10,3 @@ func main() {
 	app := NewApp()
 	app.Run()
 }
-

@@ -275,14 +275,14 @@ func (a *App) getBackendDisplayName() string {
 // GetPlatformInfo returns platform-specific information
 func (a *App) GetPlatformInfo() map[string]interface{} {
 	return map[string]interface{}{
-		"os":               runtime.GOOS,
-		"arch":             runtime.GOARCH,
-		"defaultBackend":   a.getDefaultBackend(),
-		"supportsMLX":      runtime.GOOS == "darwin" && runtime.GOARCH == "arm64",
-		"supportsVLLM":     runtime.GOOS == "windows" || runtime.GOOS == "linux",
-		"supportsVLLMWSL":  runtime.GOOS == "windows",
-		"mode":             a.config.Mode,
-		"backend":          a.config.Backend,
+		"os":              runtime.GOOS,
+		"arch":            runtime.GOARCH,
+		"defaultBackend":  a.getDefaultBackend(),
+		"supportsMLX":     runtime.GOOS == "darwin" && runtime.GOARCH == "arm64",
+		"supportsVLLM":    runtime.GOOS == "windows" || runtime.GOOS == "linux",
+		"supportsVLLMWSL": runtime.GOOS == "windows",
+		"mode":            a.config.Mode,
+		"backend":         a.config.Backend,
 	}
 }
 

@@ -858,7 +858,6 @@ func (a *App) getSLMMenuLabel() string {
 	return fmt.Sprintf("SLM Server: %s", status)
 }
 
-
 // createProvidersView creates the service providers management view
 func (a *App) createProvidersView() fyne.CanvasObject {
 	// Header

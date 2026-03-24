@@ -273,4 +273,3 @@ func (am *AuthManager) GetAllStatuses() map[string]*AuthStatus {
 	}
 	return result
 }
-

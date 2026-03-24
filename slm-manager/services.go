@@ -338,4 +338,3 @@ func (a *App) StartVLLM() {
 func (a *App) StopVLLM() {
 	a.StopBackend()
 }
-
