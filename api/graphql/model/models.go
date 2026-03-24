@@ -8,27 +8,27 @@ import (
 
 // Model represents an LLM model
 type Model struct {
-	ID              string        `json:"id"`
-	Name            string        `json:"name"`
-	Provider        *Provider     `json:"provider"`
-	DisplayName     string        `json:"displayName"`
-	Description     *string       `json:"description,omitempty"`
-	Capabilities    []Capability  `json:"capabilities"`
-	ContextWindow   int           `json:"contextWindow"`
-	MaxOutputTokens *int          `json:"maxOutputTokens,omitempty"`
-	InputPrice      float64       `json:"inputPrice"`
-	OutputPrice     float64       `json:"outputPrice"`
-	Available       bool          `json:"available"`
-	Deprecated      bool          `json:"deprecated"`
-	DeprecationDate *time.Time    `json:"deprecationDate,omitempty"`
-	Metrics         *ModelMetrics `json:"metrics,omitempty"`
-	UsageStats      *ModelUsageStats `json:"usageStats,omitempty"`
-	RelatedModels   []*Model      `json:"relatedModels"`
-	Version         *string       `json:"version,omitempty"`
-	ReleaseDate     *time.Time    `json:"releaseDate,omitempty"`
+	ID              string                 `json:"id"`
+	Name            string                 `json:"name"`
+	Provider        *Provider              `json:"provider"`
+	DisplayName     string                 `json:"displayName"`
+	Description     *string                `json:"description,omitempty"`
+	Capabilities    []Capability           `json:"capabilities"`
+	ContextWindow   int                    `json:"contextWindow"`
+	MaxOutputTokens *int                   `json:"maxOutputTokens,omitempty"`
+	InputPrice      float64                `json:"inputPrice"`
+	OutputPrice     float64                `json:"outputPrice"`
+	Available       bool                   `json:"available"`
+	Deprecated      bool                   `json:"deprecated"`
+	DeprecationDate *time.Time             `json:"deprecationDate,omitempty"`
+	Metrics         *ModelMetrics          `json:"metrics,omitempty"`
+	UsageStats      *ModelUsageStats       `json:"usageStats,omitempty"`
+	RelatedModels   []*Model               `json:"relatedModels"`
+	Version         *string                `json:"version,omitempty"`
+	ReleaseDate     *time.Time             `json:"releaseDate,omitempty"`
 	Metadata        map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt       time.Time     `json:"createdAt"`
-	UpdatedAt       time.Time     `json:"updatedAt"`
+	CreatedAt       time.Time              `json:"createdAt"`
+	UpdatedAt       time.Time              `json:"updatedAt"`
 }
 
 // ModelMetrics contains performance metrics for a model
@@ -46,10 +46,10 @@ type ModelMetrics struct {
 
 // ModelUsageStats contains usage statistics for a model
 type ModelUsageStats struct {
-	TotalRequests int             `json:"totalRequests"`
-	TotalTokens   int             `json:"totalTokens"`
-	TotalCost     float64         `json:"totalCost"`
-	Period        string          `json:"period"`
+	TotalRequests int              `json:"totalRequests"`
+	TotalTokens   int              `json:"totalTokens"`
+	TotalCost     float64          `json:"totalCost"`
+	Period        string           `json:"period"`
 	ByTaskType    []*TaskTypeUsage `json:"byTaskType"`
 	ByDomain      []*DomainUsage   `json:"byDomain"`
 }
@@ -82,42 +82,42 @@ type PageInfo struct {
 
 // Provider represents an LLM provider
 type Provider struct {
-	ID                string            `json:"id"`
-	Name              string            `json:"name"`
-	DisplayName       string            `json:"displayName"`
-	Status            ProviderStatus    `json:"status"`
-	StatusMessage     *string           `json:"statusMessage,omitempty"`
-	LastCheck         time.Time         `json:"lastCheck"`
-	Models            []*Model          `json:"models"`
-	AvailableModels   int               `json:"availableModels"`
-	TotalModels       int               `json:"totalModels"`
-	Accounts          []*Account        `json:"accounts"`
-	RateLimit         *RateLimitInfo    `json:"rateLimit,omitempty"`
-	Metrics           *ProviderMetrics  `json:"metrics,omitempty"`
-	BaseURL           string            `json:"baseUrl"`
-	SupportedFeatures []string          `json:"supportedFeatures"`
+	ID                string                 `json:"id"`
+	Name              string                 `json:"name"`
+	DisplayName       string                 `json:"displayName"`
+	Status            ProviderStatus         `json:"status"`
+	StatusMessage     *string                `json:"statusMessage,omitempty"`
+	LastCheck         time.Time              `json:"lastCheck"`
+	Models            []*Model               `json:"models"`
+	AvailableModels   int                    `json:"availableModels"`
+	TotalModels       int                    `json:"totalModels"`
+	Accounts          []*Account             `json:"accounts"`
+	RateLimit         *RateLimitInfo         `json:"rateLimit,omitempty"`
+	Metrics           *ProviderMetrics       `json:"metrics,omitempty"`
+	BaseURL           string                 `json:"baseUrl"`
+	SupportedFeatures []string               `json:"supportedFeatures"`
 	Metadata          map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt         time.Time         `json:"createdAt"`
-	UpdatedAt         time.Time         `json:"updatedAt"`
+	CreatedAt         time.Time              `json:"createdAt"`
+	UpdatedAt         time.Time              `json:"updatedAt"`
 }
 
 // Account represents a provider account
 type Account struct {
-	ID             string     `json:"id"`
-	Provider       *Provider  `json:"provider"`
-	Name           string     `json:"name"`
-	Active         bool       `json:"active"`
-	LastUsed       *time.Time `json:"lastUsed,omitempty"`
-	QuotaRemaining *float64   `json:"quotaRemaining,omitempty"`
-	QuotaLimit     *float64   `json:"quotaLimit,omitempty"`
-	QuotaResetAt   *time.Time `json:"quotaResetAt,omitempty"`
+	ID             string         `json:"id"`
+	Provider       *Provider      `json:"provider"`
+	Name           string         `json:"name"`
+	Active         bool           `json:"active"`
+	LastUsed       *time.Time     `json:"lastUsed,omitempty"`
+	QuotaRemaining *float64       `json:"quotaRemaining,omitempty"`
+	QuotaLimit     *float64       `json:"quotaLimit,omitempty"`
+	QuotaResetAt   *time.Time     `json:"quotaResetAt,omitempty"`
 	RateLimit      *RateLimitInfo `json:"rateLimit,omitempty"`
-	AllowedModels  []string   `json:"allowedModels,omitempty"`
-	UsageThisMonth *float64   `json:"usageThisMonth,omitempty"`
-	UsageLimit     *float64   `json:"usageLimit,omitempty"`
-	TokenExpiresAt *time.Time `json:"tokenExpiresAt,omitempty"`
-	CreatedAt      time.Time  `json:"createdAt"`
-	UpdatedAt      time.Time  `json:"updatedAt"`
+	AllowedModels  []string       `json:"allowedModels,omitempty"`
+	UsageThisMonth *float64       `json:"usageThisMonth,omitempty"`
+	UsageLimit     *float64       `json:"usageLimit,omitempty"`
+	TokenExpiresAt *time.Time     `json:"tokenExpiresAt,omitempty"`
+	CreatedAt      time.Time      `json:"createdAt"`
+	UpdatedAt      time.Time      `json:"updatedAt"`
 }
 
 type RateLimitInfo struct {
@@ -139,4 +139,3 @@ type ProviderMetrics struct {
 	Window            string    `json:"window"`
 	UpdatedAt         time.Time `json:"updatedAt"`
 }
-

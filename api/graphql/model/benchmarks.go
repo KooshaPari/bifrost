@@ -4,19 +4,19 @@ import "time"
 
 // Benchmark represents a benchmark run
 type Benchmark struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Description *string           `json:"description,omitempty"`
-	Models      []*Model          `json:"models"`
-	Results     []*BenchmarkResult `json:"results"`
-	Config      *BenchmarkConfig  `json:"config"`
-	Status      BenchmarkStatus   `json:"status"`
-	StartedAt   *time.Time        `json:"startedAt,omitempty"`
-	CompletedAt *time.Time        `json:"completedAt,omitempty"`
-	Summary     *BenchmarkSummary `json:"summary,omitempty"`
+	ID          string                 `json:"id"`
+	Name        string                 `json:"name"`
+	Description *string                `json:"description,omitempty"`
+	Models      []*Model               `json:"models"`
+	Results     []*BenchmarkResult     `json:"results"`
+	Config      *BenchmarkConfig       `json:"config"`
+	Status      BenchmarkStatus        `json:"status"`
+	StartedAt   *time.Time             `json:"startedAt,omitempty"`
+	CompletedAt *time.Time             `json:"completedAt,omitempty"`
+	Summary     *BenchmarkSummary      `json:"summary,omitempty"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt   time.Time         `json:"createdAt"`
-	UpdatedAt   time.Time         `json:"updatedAt"`
+	CreatedAt   time.Time              `json:"createdAt"`
+	UpdatedAt   time.Time              `json:"updatedAt"`
 }
 
 type BenchmarkResult struct {
@@ -116,4 +116,3 @@ type DateRangeInput struct {
 	Start time.Time `json:"start"`
 	End   time.Time `json:"end"`
 }
-

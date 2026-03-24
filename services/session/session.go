@@ -15,10 +15,10 @@ import (
 
 // Context tracks cumulative state for a single agent session
 type Context struct {
-	SessionID      string          `json:"session_id"`
-	StartTime      time.Time       `json:"start_time"`
-	LastUpdated    time.Time       `json:"last_updated"`
-	IterationCount int             `json:"iteration_count"`
+	SessionID      string    `json:"session_id"`
+	StartTime      time.Time `json:"start_time"`
+	LastUpdated    time.Time `json:"last_updated"`
+	IterationCount int       `json:"iteration_count"`
 
 	// Model routing history
 	ModelDecisions []ModelDecision `json:"model_decisions"`
@@ -155,4 +155,3 @@ func (t *Tracker) JetStream() jetstream.JetStream {
 func (t *Tracker) KV() jetstream.KeyValue {
 	return t.kv
 }
-

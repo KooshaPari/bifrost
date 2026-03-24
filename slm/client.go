@@ -28,7 +28,7 @@ func NewClient(cfg Config) *Client {
 	if timeout == 0 {
 		timeout = 30 * time.Second
 	}
-	
+
 	return &Client{
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    cfg.BaseURL,
@@ -77,23 +77,23 @@ func (c *Client) Health(ctx context.Context) (*HealthResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
-	
+
 	httpResp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("do request: %w", err)
 	}
 	defer httpResp.Body.Close()
-	
+
 	if httpResp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(httpResp.Body)
 		return nil, fmt.Errorf("health check failed: %s: %s", httpResp.Status, string(body))
 	}
-	
+
 	var resp HealthResponse
 	if err := json.NewDecoder(httpResp.Body).Decode(&resp); err != nil {
 		return nil, fmt.Errorf("decode response: %w", err)
 	}
-	
+
 	return &resp, nil
 }
 
@@ -103,28 +103,28 @@ func (c *Client) post(ctx context.Context, path string, body interface{}, result
 	if err != nil {
 		return fmt.Errorf("marshal request: %w", err)
 	}
-	
+
 	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+path, bytes.NewReader(jsonBody))
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("do request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("request failed: %s: %s", resp.Status, string(body))
 	}
-	
+
 	if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
 		return fmt.Errorf("decode response: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -136,4 +136,3 @@ func (c *Client) IsHealthy(ctx context.Context) bool {
 	}
 	return health.Status == "ok"
 }
-

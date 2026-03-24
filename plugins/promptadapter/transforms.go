@@ -8,12 +8,12 @@ import (
 
 // TransformRule represents a single prompt transformation rule
 type TransformRule struct {
-	Name        string                                                 `json:"name"`
-	Description string                                                 `json:"description"`
-	Priority    int                                                    `json:"priority"` // Higher = applied first
-	FromPattern *regexp.Regexp                                         `json:"-"`
-	ToTemplate  string                                                 `json:"to_template"`
-	Condition   func(from, to *ModelBehaviorProfile) bool              `json:"-"`
+	Name        string                                                     `json:"name"`
+	Description string                                                     `json:"description"`
+	Priority    int                                                        `json:"priority"` // Higher = applied first
+	FromPattern *regexp.Regexp                                             `json:"-"`
+	ToTemplate  string                                                     `json:"to_template"`
+	Condition   func(from, to *ModelBehaviorProfile) bool                  `json:"-"`
 	Transform   func(prompt string, from, to *ModelBehaviorProfile) string `json:"-"`
 }
 
@@ -59,19 +59,19 @@ func (e *TransformEngine) registerBuiltinRules() {
 	e.rules = append(e.rules, e.jsonToXMLRule())
 	e.rules = append(e.rules, e.xmlToJSONRule())
 	e.rules = append(e.rules, e.markdownToXMLRule())
-	
+
 	// System prompt adaptations
 	e.rules = append(e.rules, e.systemPromptStyleRule())
-	
+
 	// Constraint style adaptations
 	e.rules = append(e.rules, e.constraintStyleRule())
-	
+
 	// Thinking/reasoning prompts
 	e.rules = append(e.rules, e.thinkingStyleRule())
-	
+
 	// Example placement
 	e.rules = append(e.rules, e.examplePlacementRule())
-	
+
 	// Verbosity adjustments
 	e.rules = append(e.rules, e.verbosityRule())
 }
@@ -88,17 +88,17 @@ func (e *TransformEngine) jsonToXMLRule() *TransformRule {
 		Transform: func(prompt string, from, to *ModelBehaviorProfile) string {
 			// Replace JSON-specific instructions
 			replacements := map[string]string{
-				"respond in JSON":         "respond using XML tags",
-				"Respond in JSON":         "Respond using XML tags",
-				"output as JSON":          "output using XML tags",
-				"Output as JSON":          "Output using XML tags",
-				"return JSON":             "return XML",
-				"Return JSON":             "Return XML",
-				"JSON format":             "XML format",
-				"```json":                 "<response>",
-				"```":                     "</response>",
-				"{ \"":                    "<",
-				"\" }":                    "/>",
+				"respond in JSON": "respond using XML tags",
+				"Respond in JSON": "Respond using XML tags",
+				"output as JSON":  "output using XML tags",
+				"Output as JSON":  "Output using XML tags",
+				"return JSON":     "return XML",
+				"Return JSON":     "Return XML",
+				"JSON format":     "XML format",
+				"```json":         "<response>",
+				"```":             "</response>",
+				"{ \"":            "<",
+				"\" }":            "/>",
 			}
 			result := prompt
 			for old, new := range replacements {
@@ -120,12 +120,12 @@ func (e *TransformEngine) xmlToJSONRule() *TransformRule {
 		},
 		Transform: func(prompt string, from, to *ModelBehaviorProfile) string {
 			replacements := map[string]string{
-				"respond using XML":    "respond in JSON",
-				"Respond using XML":    "Respond in JSON",
-				"output using XML":     "output as JSON",
-				"XML tags":             "JSON format",
-				"<response>":           "```json\n{",
-				"</response>":          "}\n```",
+				"respond using XML": "respond in JSON",
+				"Respond using XML": "Respond in JSON",
+				"output using XML":  "output as JSON",
+				"XML tags":          "JSON format",
+				"<response>":        "```json\n{",
+				"</response>":       "}\n```",
 			}
 			result := prompt
 			for old, new := range replacements {

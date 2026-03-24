@@ -36,4 +36,3 @@ func releaseResponse(resp *fasthttp.Response) {
 	resp.Reset()
 	responsePool.Put(resp)
 }
-

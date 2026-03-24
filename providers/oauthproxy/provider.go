@@ -170,4 +170,3 @@ func (p *Provider) convertToOpenAIRequest(req *schemas.BifrostRequest) *OpenAIRe
 		Stream:      false,
 	}
 }
-

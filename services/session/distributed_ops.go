@@ -178,4 +178,3 @@ func (mgr *DistributedManager) Close() error {
 
 	return nil
 }
-

@@ -24,22 +24,22 @@ const (
 
 // EpisodicEvent represents a learning event at any scope
 type EpisodicEvent struct {
-	ID            uuid.UUID     `json:"id"`
-	Scope         LearningScope `json:"scope"`
-	ScopeID       string        `json:"scope_id"` // session_id, project_id, user_id, etc.
-	Timestamp     time.Time     `json:"timestamp"`
+	ID        uuid.UUID     `json:"id"`
+	Scope     LearningScope `json:"scope"`
+	ScopeID   string        `json:"scope_id"` // session_id, project_id, user_id, etc.
+	Timestamp time.Time     `json:"timestamp"`
 
 	// Request context
-	TaskType      string  `json:"task_type"`
-	Complexity    float64 `json:"complexity"`
-	Model         string  `json:"model"`
-	Provider      string  `json:"provider"`
+	TaskType   string  `json:"task_type"`
+	Complexity float64 `json:"complexity"`
+	Model      string  `json:"model"`
+	Provider   string  `json:"provider"`
 
 	// Outcome metrics
-	Success       bool    `json:"success"`
-	LatencyMs     float64 `json:"latency_ms"`
-	CostUSD       float64 `json:"cost_usd"`
-	QualityScore  float64 `json:"quality_score"`  // 0-1, from feedback or auto-eval
+	Success      bool    `json:"success"`
+	LatencyMs    float64 `json:"latency_ms"`
+	CostUSD      float64 `json:"cost_usd"`
+	QualityScore float64 `json:"quality_score"` // 0-1, from feedback or auto-eval
 
 	// Sentiment context
 	EmotionalState   string  `json:"emotional_state"`   // dominant emotion
@@ -52,29 +52,29 @@ type EpisodicEvent struct {
 
 // ScopedLearning holds learnings for a specific scope instance
 type ScopedLearning struct {
-	ScopeID          string        `json:"scope_id"`
-	Scope            LearningScope `json:"scope"`
-	CreatedAt        time.Time     `json:"created_at"`
-	UpdatedAt        time.Time     `json:"updated_at"`
+	ScopeID   string        `json:"scope_id"`
+	Scope     LearningScope `json:"scope"`
+	CreatedAt time.Time     `json:"created_at"`
+	UpdatedAt time.Time     `json:"updated_at"`
 
 	// Aggregated metrics
-	TotalRequests    int     `json:"total_requests"`
-	SuccessRate      float64 `json:"success_rate"`
-	AvgLatencyMs     float64 `json:"avg_latency_ms"`
-	TotalCostUSD     float64 `json:"total_cost_usd"`
-	AvgQualityScore  float64 `json:"avg_quality_score"`
+	TotalRequests   int     `json:"total_requests"`
+	SuccessRate     float64 `json:"success_rate"`
+	AvgLatencyMs    float64 `json:"avg_latency_ms"`
+	TotalCostUSD    float64 `json:"total_cost_usd"`
+	AvgQualityScore float64 `json:"avg_quality_score"`
 
 	// Model preferences (learned)
-	ModelPreferences   map[string]float64 `json:"model_preferences"`   // model -> preference weight
-	TaskTypePrefs      map[string]string  `json:"task_type_prefs"`     // task_type -> preferred_model
-	AvoidModels        []string           `json:"avoid_models"`        // models that performed poorly
+	ModelPreferences map[string]float64 `json:"model_preferences"` // model -> preference weight
+	TaskTypePrefs    map[string]string  `json:"task_type_prefs"`   // task_type -> preferred_model
+	AvoidModels      []string           `json:"avoid_models"`      // models that performed poorly
 
 	// Emotional trajectory
-	EmotionalHistory   []EmotionalState `json:"emotional_history"`
-	FrustrationTrend   float64          `json:"frustration_trend"` // -1 to 1 (improving to worsening)
+	EmotionalHistory []EmotionalState `json:"emotional_history"`
+	FrustrationTrend float64          `json:"frustration_trend"` // -1 to 1 (improving to worsening)
 
 	// Detected patterns
-	BehaviorPatterns   []BehaviorPattern `json:"behavior_patterns"`
+	BehaviorPatterns []BehaviorPattern `json:"behavior_patterns"`
 
 	mu sync.RWMutex
 }
@@ -99,12 +99,12 @@ type BehaviorPattern struct {
 // TieredLearningSystem manages learning across all scopes
 type TieredLearningSystem struct {
 	// Scope stores
-	requestCache  *RequestCache              // Short-lived request context
-	promptChains  map[string]*ScopedLearning // chain_id -> learning
-	sessions      map[string]*ScopedLearning // session_id -> learning
-	projects      map[string]*ScopedLearning // project_id -> learning
-	users         map[string]*ScopedLearning // user_id -> learning
-	global        *ScopedLearning            // Global learnings
+	requestCache *RequestCache              // Short-lived request context
+	promptChains map[string]*ScopedLearning // chain_id -> learning
+	sessions     map[string]*ScopedLearning // session_id -> learning
+	projects     map[string]*ScopedLearning // project_id -> learning
+	users        map[string]*ScopedLearning // user_id -> learning
+	global       *ScopedLearning            // Global learnings
 
 	// Aggregation
 	aggregator *LearningAggregator

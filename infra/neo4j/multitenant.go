@@ -359,14 +359,14 @@ func (c *MultiTenantClient) GetTrace(ctx context.Context, traceID string) ([]Tra
 	for result.Next(ctx) {
 		rec := result.Record()
 		span := TraceSpan{
-			TraceID:   traceID,
-			SpanID:    safeString(rec.Values[0]),
+			TraceID:      traceID,
+			SpanID:       safeString(rec.Values[0]),
 			ParentSpanID: safeString(rec.Values[1]),
-			Name:      safeString(rec.Values[2]),
-			Service:   safeString(rec.Values[3]),
-			StartTime: safeInt64(rec.Values[4]),
-			Duration:  safeInt64(rec.Values[5]),
-			Status:    safeString(rec.Values[6]),
+			Name:         safeString(rec.Values[2]),
+			Service:      safeString(rec.Values[3]),
+			StartTime:    safeInt64(rec.Values[4]),
+			Duration:     safeInt64(rec.Values[5]),
+			Status:       safeString(rec.Values[6]),
 		}
 		spans = append(spans, span)
 	}

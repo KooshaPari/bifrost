@@ -4,16 +4,16 @@ package model
 type Capability string
 
 const (
-	CapabilityTextGeneration    Capability = "TEXT_GENERATION"
-	CapabilityCodeGeneration    Capability = "CODE_GENERATION"
-	CapabilityReasoning         Capability = "REASONING"
-	CapabilityMath              Capability = "MATH"
-	CapabilityCreative          Capability = "CREATIVE"
-	CapabilityVision            Capability = "VISION"
-	CapabilityAudio             Capability = "AUDIO"
-	CapabilityEmbeddings        Capability = "EMBEDDINGS"
-	CapabilityFunctionCalling   Capability = "FUNCTION_CALLING"
-	CapabilityStructuredOutput  Capability = "STRUCTURED_OUTPUT"
+	CapabilityTextGeneration   Capability = "TEXT_GENERATION"
+	CapabilityCodeGeneration   Capability = "CODE_GENERATION"
+	CapabilityReasoning        Capability = "REASONING"
+	CapabilityMath             Capability = "MATH"
+	CapabilityCreative         Capability = "CREATIVE"
+	CapabilityVision           Capability = "VISION"
+	CapabilityAudio            Capability = "AUDIO"
+	CapabilityEmbeddings       Capability = "EMBEDDINGS"
+	CapabilityFunctionCalling  Capability = "FUNCTION_CALLING"
+	CapabilityStructuredOutput Capability = "STRUCTURED_OUTPUT"
 )
 
 // MetricType represents benchmark metric types
@@ -47,12 +47,12 @@ const (
 type GroupByField string
 
 const (
-	GroupByFieldProvider  GroupByField = "PROVIDER"
-	GroupByFieldModel     GroupByField = "MODEL"
-	GroupByFieldUser      GroupByField = "USER"
-	GroupByFieldProject   GroupByField = "PROJECT"
-	GroupByFieldTaskType  GroupByField = "TASK_TYPE"
-	GroupByFieldDomain    GroupByField = "DOMAIN"
+	GroupByFieldProvider GroupByField = "PROVIDER"
+	GroupByFieldModel    GroupByField = "MODEL"
+	GroupByFieldUser     GroupByField = "USER"
+	GroupByFieldProject  GroupByField = "PROJECT"
+	GroupByFieldTaskType GroupByField = "TASK_TYPE"
+	GroupByFieldDomain   GroupByField = "DOMAIN"
 )
 
 // PolicyType represents routing policy types
@@ -92,11 +92,11 @@ const (
 type AlertType string
 
 const (
-	AlertTypeCostThreshold     AlertType = "COST_THRESHOLD"
-	AlertTypeRateLimitWarning  AlertType = "RATE_LIMIT_WARNING"
-	AlertTypeErrorSpike        AlertType = "ERROR_SPIKE"
-	AlertTypeLatencySpike      AlertType = "LATENCY_SPIKE"
-	AlertTypeQuotaWarning      AlertType = "QUOTA_WARNING"
+	AlertTypeCostThreshold    AlertType = "COST_THRESHOLD"
+	AlertTypeRateLimitWarning AlertType = "RATE_LIMIT_WARNING"
+	AlertTypeErrorSpike       AlertType = "ERROR_SPIKE"
+	AlertTypeLatencySpike     AlertType = "LATENCY_SPIKE"
+	AlertTypeQuotaWarning     AlertType = "QUOTA_WARNING"
 )
 
 // AlertSeverity represents alert severity levels
@@ -117,4 +117,3 @@ const (
 	RoutingEventTypeError    RoutingEventType = "ERROR"
 	RoutingEventTypeFeedback RoutingEventType = "FEEDBACK"
 )
-

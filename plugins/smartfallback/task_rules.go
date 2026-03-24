@@ -181,4 +181,3 @@ func (tre *TaskRuleEngine) GetAllRules() []*TaskRule {
 	}
 	return rules
 }
-

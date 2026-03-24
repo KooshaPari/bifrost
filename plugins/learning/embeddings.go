@@ -20,11 +20,11 @@ type EmbeddingStore struct {
 
 // EventEmbedding represents an embedded learning event
 type EventEmbedding struct {
-	EventID    uuid.UUID `json:"event_id"`
-	ScopeID    string    `json:"scope_id"`
-	Scope      LearningScope `json:"scope"`
-	Embedding  []float32 `json:"embedding"`
-	Text       string    `json:"text"` // Original text that was embedded
+	EventID   uuid.UUID     `json:"event_id"`
+	ScopeID   string        `json:"scope_id"`
+	Scope     LearningScope `json:"scope"`
+	Embedding []float32     `json:"embedding"`
+	Text      string        `json:"text"` // Original text that was embedded
 }
 
 // NewEmbeddingStore creates a new embedding store with VoyageAI
@@ -145,4 +145,3 @@ func sqrt32(x float32) float32 {
 	}
 	return result
 }
-

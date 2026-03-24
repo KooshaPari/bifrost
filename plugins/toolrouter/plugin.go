@@ -128,9 +128,9 @@ func (tr *ToolRouter) Cleanup() error {
 
 // ToolMatch represents a matched tool with score
 type ToolMatch struct {
-	ToolID      uuid.UUID
-	ToolName    string
-	Score       float64
+	ToolID       uuid.UUID
+	ToolName     string
+	Score        float64
 	Capabilities []string
 }
 
@@ -138,4 +138,3 @@ type ToolMatch struct {
 type contextKey string
 
 const toolProfileKey contextKey = "tool_profile"
-

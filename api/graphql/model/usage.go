@@ -4,19 +4,19 @@ import "time"
 
 // UsageReport contains usage analytics data
 type UsageReport struct {
-	Timeframe   Timeframe          `json:"timeframe"`
-	StartTime   time.Time          `json:"startTime"`
-	EndTime     time.Time          `json:"endTime"`
-	TotalRequests int              `json:"totalRequests"`
-	TotalTokens   int              `json:"totalTokens"`
-	TotalCost     float64          `json:"totalCost"`
-	ByProvider    []*ProviderUsage `json:"byProvider"`
-	ByModel       []*ModelUsage    `json:"byModel"`
-	ByUser        []*UserUsage     `json:"byUser,omitempty"`
-	ByProject     []*ProjectUsage  `json:"byProject,omitempty"`
+	Timeframe     Timeframe            `json:"timeframe"`
+	StartTime     time.Time            `json:"startTime"`
+	EndTime       time.Time            `json:"endTime"`
+	TotalRequests int                  `json:"totalRequests"`
+	TotalTokens   int                  `json:"totalTokens"`
+	TotalCost     float64              `json:"totalCost"`
+	ByProvider    []*ProviderUsage     `json:"byProvider"`
+	ByModel       []*ModelUsage        `json:"byModel"`
+	ByUser        []*UserUsage         `json:"byUser,omitempty"`
+	ByProject     []*ProjectUsage      `json:"byProject,omitempty"`
 	ByTaskType    []*TaskTypeBreakdown `json:"byTaskType"`
-	TimeSeries    []*UsageDataPoint `json:"timeSeries"`
-	Trends        *UsageTrends     `json:"trends,omitempty"`
+	TimeSeries    []*UsageDataPoint    `json:"timeSeries"`
+	Trends        *UsageTrends         `json:"trends,omitempty"`
 }
 
 type ProviderUsage struct {
@@ -80,26 +80,26 @@ type UsageTrends struct {
 
 // UsageFilters for filtering usage queries
 type UsageFilters struct {
-	Providers  []string   `json:"providers,omitempty"`
-	Models     []string   `json:"models,omitempty"`
-	Users      []string   `json:"users,omitempty"`
-	Projects   []string   `json:"projects,omitempty"`
-	TaskTypes  []string   `json:"taskTypes,omitempty"`
-	MinCost    *float64   `json:"minCost,omitempty"`
-	MaxCost    *float64   `json:"maxCost,omitempty"`
-	StartTime  *time.Time `json:"startTime,omitempty"`
-	EndTime    *time.Time `json:"endTime,omitempty"`
+	Providers []string   `json:"providers,omitempty"`
+	Models    []string   `json:"models,omitempty"`
+	Users     []string   `json:"users,omitempty"`
+	Projects  []string   `json:"projects,omitempty"`
+	TaskTypes []string   `json:"taskTypes,omitempty"`
+	MinCost   *float64   `json:"minCost,omitempty"`
+	MaxCost   *float64   `json:"maxCost,omitempty"`
+	StartTime *time.Time `json:"startTime,omitempty"`
+	EndTime   *time.Time `json:"endTime,omitempty"`
 }
 
 // UsageUpdate for real-time subscription
 type UsageUpdate struct {
-	Timestamp         time.Time      `json:"timestamp"`
-	RequestsPerMinute float64        `json:"requestsPerMinute"`
-	TokensPerMinute   float64        `json:"tokensPerMinute"`
-	CostPerHour       float64        `json:"costPerHour"`
-	ActiveSessions    int            `json:"activeSessions"`
-	TopModels         []*ModelUsage  `json:"topModels"`
-	Alerts            []*UsageAlert  `json:"alerts"`
+	Timestamp         time.Time     `json:"timestamp"`
+	RequestsPerMinute float64       `json:"requestsPerMinute"`
+	TokensPerMinute   float64       `json:"tokensPerMinute"`
+	CostPerHour       float64       `json:"costPerHour"`
+	ActiveSessions    int           `json:"activeSessions"`
+	TopModels         []*ModelUsage `json:"topModels"`
+	Alerts            []*UsageAlert `json:"alerts"`
 }
 
 type UsageAlert struct {
@@ -110,4 +110,3 @@ type UsageAlert struct {
 	Timestamp time.Time              `json:"timestamp"`
 	Metadata  map[string]interface{} `json:"metadata,omitempty"`
 }
-

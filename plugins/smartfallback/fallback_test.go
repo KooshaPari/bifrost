@@ -157,4 +157,3 @@ func TestTaskRuleEngine(t *testing.T) {
 		t.Error("expected fallbacks for code generation task")
 	}
 }
-

@@ -29,41 +29,41 @@ type Client struct {
 
 // Config holds configuration for the cliproxy client
 type Config struct {
-	ConfigPath     string
-	AuthDir        string
-	Port           int
-	TenantID       string
-	EnableMetrics  bool
-	MetricsPrefix  string
+	ConfigPath    string
+	AuthDir       string
+	Port          int
+	TenantID      string
+	EnableMetrics bool
+	MetricsPrefix string
 	// Provider-specific settings
-	EnableGemini   bool
-	EnableClaude   bool
-	EnableCodex    bool
-	EnableQwen     bool
-	EnableAuggie   bool
-	EnableCursor   bool
-	EnableCopilot  bool
+	EnableGemini  bool
+	EnableClaude  bool
+	EnableCodex   bool
+	EnableQwen    bool
+	EnableAuggie  bool
+	EnableCursor  bool
+	EnableCopilot bool
 }
 
 // Metrics tracks proxy interaction metrics
 type Metrics struct {
-	mu               sync.RWMutex
-	RequestsTotal    int64
-	RequestsSuccess  int64
-	RequestsFailed   int64
-	TokensProcessed  int64
-	TotalLatencyMs   int64
-	ProviderMetrics  map[string]*ProviderMetrics
-	LastActivity     time.Time
+	mu              sync.RWMutex
+	RequestsTotal   int64
+	RequestsSuccess int64
+	RequestsFailed  int64
+	TokensProcessed int64
+	TotalLatencyMs  int64
+	ProviderMetrics map[string]*ProviderMetrics
+	LastActivity    time.Time
 }
 
 // ProviderMetrics tracks per-provider metrics
 type ProviderMetrics struct {
-	Requests    int64
-	Successes   int64
-	Failures    int64
-	AvgLatency  float64
-	LastUsed    time.Time
+	Requests   int64
+	Successes  int64
+	Failures   int64
+	AvgLatency float64
+	LastUsed   time.Time
 }
 
 // EventHandler is called when proxy events occur
@@ -238,4 +238,3 @@ func GetProviderInfo(provider string) (*ProviderInfo, error) {
 	}
 	return info, nil
 }
-

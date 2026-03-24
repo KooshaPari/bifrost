@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	gkitmiddleware "github.com/KooshaPari/phenotype-go-kit/pkg/middleware"
+	"github.com/go-chi/chi/v5"
 )
 
 // ApplyDefaultStack applies the phenotype-go-kit middleware stack to a chi router.

@@ -16,8 +16,8 @@ import (
 // Free tier: 200M tokens for embeddings, 200M for reranking
 
 const (
-	VoyageBaseURL       = "https://api.voyageai.com/v1"
-	VoyageEmbedEndpoint = "/embeddings"
+	VoyageBaseURL        = "https://api.voyageai.com/v1"
+	VoyageEmbedEndpoint  = "/embeddings"
 	VoyageRerankEndpoint = "/rerank"
 )
 
@@ -26,11 +26,11 @@ type VoyageModel string
 
 const (
 	// Embedding models
-	Voyage35       VoyageModel = "voyage-3.5"       // Best value: $0.06/M, 200M free
-	Voyage35Lite   VoyageModel = "voyage-3.5-lite"  // Budget: $0.02/M, 200M free
-	Voyage3Large   VoyageModel = "voyage-3-large"   // Highest quality: $0.18/M
-	VoyageCode3    VoyageModel = "voyage-code-3"    // Code-specific: $0.18/M
-	VoyageMulti3   VoyageModel = "voyage-multimodal-3" // Images+text: $0.12/M text
+	Voyage35     VoyageModel = "voyage-3.5"          // Best value: $0.06/M, 200M free
+	Voyage35Lite VoyageModel = "voyage-3.5-lite"     // Budget: $0.02/M, 200M free
+	Voyage3Large VoyageModel = "voyage-3-large"      // Highest quality: $0.18/M
+	VoyageCode3  VoyageModel = "voyage-code-3"       // Code-specific: $0.18/M
+	VoyageMulti3 VoyageModel = "voyage-multimodal-3" // Images+text: $0.12/M text
 
 	// Reranker models
 	Rerank25     VoyageModel = "rerank-2.5"      // Best: $0.05/M, 200M free
@@ -162,4 +162,3 @@ func doRequest[Req, Resp any](ctx context.Context, c *VoyageClient, endpoint str
 
 	return &result, nil
 }
-

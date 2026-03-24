@@ -19,17 +19,17 @@ type Message struct {
 type Config struct {
 	// DSPy service endpoint
 	ServiceURL string `json:"service_url" yaml:"service_url"`
-	
+
 	// Whether to use rule-based transforms before DSPy
 	UseRuleEngine bool `json:"use_rule_engine" yaml:"use_rule_engine"`
-	
+
 	// Cache settings
 	EnableCache bool          `json:"enable_cache" yaml:"enable_cache"`
 	CacheTTL    time.Duration `json:"cache_ttl" yaml:"cache_ttl"`
-	
+
 	// Fallback behavior
 	FallbackToOriginal bool `json:"fallback_to_original" yaml:"fallback_to_original"`
-	
+
 	// Minimum confidence threshold
 	MinConfidence float64 `json:"min_confidence" yaml:"min_confidence"`
 }
@@ -72,9 +72,9 @@ func NewPlugin(config *Config) *Plugin {
 	if config == nil {
 		config = DefaultConfig()
 	}
-	
+
 	registry := NewProfileRegistry()
-	
+
 	return &Plugin{
 		config:    config,
 		registry:  registry,
@@ -121,9 +121,9 @@ func (p *Plugin) Adapt(ctx context.Context, prompt, sourceModel, targetModel str
 			return cached, nil
 		}
 	}
-	
+
 	var result *AdaptationResult
-	
+
 	// Phase 1: Apply rule-based transformations
 	if p.config.UseRuleEngine {
 		transformed := p.transform.Transform(prompt, sourceModel, targetModel)
@@ -136,7 +136,7 @@ func (p *Plugin) Adapt(ctx context.Context, prompt, sourceModel, targetModel str
 			Method:          "rules",
 		}
 	}
-	
+
 	// Phase 2: Use DSPy for further optimization
 	dspyResult, err := p.client.Adapt(ctx, &AdaptRequest{
 		Prompt:      result.AdaptedPrompt,
@@ -144,7 +144,7 @@ func (p *Plugin) Adapt(ctx context.Context, prompt, sourceModel, targetModel str
 		TargetModel: targetModel,
 		UseCache:    true,
 	})
-	
+
 	if err == nil && dspyResult.Confidence >= p.config.MinConfidence {
 		result = &AdaptationResult{
 			AdaptedPrompt:   dspyResult.AdaptedPrompt,
@@ -165,7 +165,7 @@ func (p *Plugin) Adapt(ctx context.Context, prompt, sourceModel, targetModel str
 			Method:          "fallback",
 		}
 	}
-	
+
 	// Cache result
 	if p.config.EnableCache && result != nil {
 		p.putInCache(prompt, sourceModel, targetModel, result)
@@ -254,4 +254,3 @@ func (p *Plugin) OptimizePrompt(ctx context.Context, prompt, targetModel string,
 func (p *Plugin) Close() error {
 	return nil
 }
-

@@ -146,4 +146,3 @@ func (db *DB) WithTx(ctx context.Context, fn func(*sqlc.Queries) error) error {
 func (db *DB) Health(ctx context.Context) error {
 	return db.Pool.Ping(ctx)
 }
-

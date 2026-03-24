@@ -72,4 +72,3 @@ func TestNewClient(t *testing.T) {
 		t.Errorf("expected base URL %s, got %s", expectedURL, client.baseURL)
 	}
 }
-

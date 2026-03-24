@@ -156,4 +156,3 @@ func (w *MetricsSyncWorkflow) cleanupCache(ctx worker.HatchetContext) (*MetricsS
 		Timestamp:     time.Now(),
 	}, nil
 }
-

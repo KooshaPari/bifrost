@@ -79,4 +79,3 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, fieldName s
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	return nil // Placeholder
 }
-

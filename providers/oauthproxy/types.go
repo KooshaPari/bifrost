@@ -51,13 +51,13 @@ type OpenAIToolCallFunction struct {
 
 // OpenAIResponse represents an OpenAI-compatible chat completion response
 type OpenAIResponse struct {
-	ID      string           `json:"id"`
-	Object  string           `json:"object"`
-	Created int64            `json:"created"`
-	Model   string           `json:"model"`
-	Choices []OpenAIChoice   `json:"choices"`
-	Usage   *OpenAIUsage     `json:"usage,omitempty"`
-	Error   *OpenAIError     `json:"error,omitempty"`
+	ID      string         `json:"id"`
+	Object  string         `json:"object"`
+	Created int64          `json:"created"`
+	Model   string         `json:"model"`
+	Choices []OpenAIChoice `json:"choices"`
+	Usage   *OpenAIUsage   `json:"usage,omitempty"`
+	Error   *OpenAIError   `json:"error,omitempty"`
 }
 
 // OpenAIChoice represents a choice in the response
@@ -136,4 +136,3 @@ func (p *Provider) Embedding(req *schemas.BifrostRequest) (*schemas.BifrostRespo
 	_ = req
 	return nil, makeBifrostError(501, "Embedding not supported for OAuth proxy")
 }
-

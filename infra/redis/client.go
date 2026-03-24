@@ -167,4 +167,3 @@ func (c *Client) UpdateSessionActivity(ctx context.Context, sessionID string, to
 
 	return c.SetSession(ctx, session, 24*time.Hour)
 }
-

@@ -151,4 +151,3 @@ func (c *Client) Delete(ctx context.Context, keys ...string) error {
 func (c *Client) TTL(ctx context.Context, key string) (time.Duration, error) {
 	return c.rdb.TTL(ctx, key).Result()
 }
-

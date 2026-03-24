@@ -51,19 +51,19 @@ type Config struct {
 	WorkDir        string
 	Env            []string
 	// Bifrost extensions
-	TenantID       string
-	EnableMetrics  bool
-	MetricsPrefix  string
+	TenantID      string
+	EnableMetrics bool
+	MetricsPrefix string
 }
 
 // Metrics tracks agent interaction metrics
 type Metrics struct {
-	mu              sync.RWMutex
-	MessagesSent    int64
+	mu               sync.RWMutex
+	MessagesSent     int64
 	MessagesReceived int64
-	TotalLatencyMs  int64
-	ErrorCount      int64
-	LastActivity    time.Time
+	TotalLatencyMs   int64
+	ErrorCount       int64
+	LastActivity     time.Time
 }
 
 // EventHandler is called when agent events occur
@@ -160,4 +160,3 @@ func (c *Client) OnEvent(handler EventHandler) {
 	defer c.mu.Unlock()
 	c.handlers = append(c.handlers, handler)
 }
-

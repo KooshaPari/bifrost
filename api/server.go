@@ -19,15 +19,15 @@ import (
 
 // Server is the unified API server
 type Server struct {
-	router    chi.Router
-	logger    *slog.Logger
-	
+	router chi.Router
+	logger *slog.Logger
+
 	// Sub-servers
-	connect   *connect.Server
-	graphql   *graphql.Server
-	
+	connect *connect.Server
+	graphql *graphql.Server
+
 	// Configuration
-	config    Config
+	config Config
 }
 
 // Config holds server configuration
@@ -36,18 +36,18 @@ type Config struct {
 	RESTAddr string
 	// Connect endpoint (internal gRPC-like)
 	ConnectAddr string
-	// GraphQL endpoint  
+	// GraphQL endpoint
 	GraphQLAddr string
-	
+
 	// Unified server address (all APIs on one port with path routing)
 	UnifiedAddr string
-	
+
 	// Logging
 	Logger *slog.Logger
-	
+
 	// CORS configuration
 	AllowedOrigins []string
-	
+
 	// Development mode
 	DevMode bool
 }
@@ -81,7 +81,7 @@ func NewServer(database *db.DB, cfg Config) *Server {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
-	
+
 	// CORS
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   cfg.AllowedOrigins,
@@ -98,8 +98,8 @@ func NewServer(database *db.DB, cfg Config) *Server {
 	})
 
 	graphqlServer := graphql.NewServerWithConfig(database, graphql.Config{
-		Logger:           logger,
-		EnablePlayground: cfg.DevMode,
+		Logger:              logger,
+		EnablePlayground:    cfg.DevMode,
 		EnableIntrospection: cfg.DevMode,
 	})
 
@@ -167,4 +167,3 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) GraphQLResolver() *resolvers.Resolver {
 	return s.graphql.Resolver()
 }
-

@@ -29,12 +29,12 @@ func NewAdapterClient(baseURL string) *AdapterClient {
 
 // AdaptRequest represents a request to adapt a prompt
 type AdaptRequest struct {
-	Prompt      string            `json:"prompt"`
-	SourceModel string            `json:"source_model"`
-	TargetModel string            `json:"target_model"`
-	TaskType    string            `json:"task_type,omitempty"`
-	Examples    []map[string]any  `json:"examples,omitempty"`
-	UseCache    bool              `json:"use_cache"`
+	Prompt      string           `json:"prompt"`
+	SourceModel string           `json:"source_model"`
+	TargetModel string           `json:"target_model"`
+	TaskType    string           `json:"task_type,omitempty"`
+	Examples    []map[string]any `json:"examples,omitempty"`
+	UseCache    bool             `json:"use_cache"`
 }
 
 // AdaptResponse represents the adaptation result
@@ -148,4 +148,3 @@ func (c *AdapterClient) HealthCheck(ctx context.Context) error {
 
 	return nil
 }
-

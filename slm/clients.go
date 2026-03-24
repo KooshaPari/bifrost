@@ -14,9 +14,9 @@ type Clients struct {
 
 // ClientsConfig configures all SLM clients
 type ClientsConfig struct {
-	RouterURL     string
-	SummarizerURL string
-	ValidatorURL  string // optional
+	RouterURL      string
+	SummarizerURL  string
+	ValidatorURL   string // optional
 	TimeoutSeconds int
 }
 
@@ -42,33 +42,33 @@ func NewClients(cfg ClientsConfig) *Clients {
 			TimeoutSeconds: cfg.TimeoutSeconds,
 		}),
 	}
-	
+
 	if cfg.ValidatorURL != "" {
 		clients.Validator = NewClient(Config{
 			BaseURL:        cfg.ValidatorURL,
 			TimeoutSeconds: cfg.TimeoutSeconds,
 		})
 	}
-	
+
 	return clients
 }
 
 // HealthCheck checks all SLM servers and returns status
 func (c *Clients) HealthCheck(ctx context.Context) map[string]error {
 	results := make(map[string]error)
-	
+
 	if _, err := c.Router.Health(ctx); err != nil {
 		results["router"] = err
 	} else {
 		results["router"] = nil
 	}
-	
+
 	if _, err := c.Summarizer.Health(ctx); err != nil {
 		results["summarizer"] = err
 	} else {
 		results["summarizer"] = nil
 	}
-	
+
 	if c.Validator != nil {
 		if _, err := c.Validator.Health(ctx); err != nil {
 			results["validator"] = err
@@ -76,7 +76,7 @@ func (c *Clients) HealthCheck(ctx context.Context) map[string]error {
 			results["validator"] = nil
 		}
 	}
-	
+
 	return results
 }
 
@@ -109,7 +109,7 @@ func (c *Clients) SummarizeMultiResolution(ctx context.Context, text string, mod
 	}
 	short = shortResp.Summary
 	importance = shortResp.Importance
-	
+
 	// Get medium summary
 	medResp, err := c.Summarize(ctx, &SummarizeRequest{
 		Text:          text,
@@ -120,7 +120,7 @@ func (c *Clients) SummarizeMultiResolution(ctx context.Context, text string, mod
 		return "", "", "", 0, fmt.Errorf("medium summary: %w", err)
 	}
 	medium = medResp.Summary
-	
+
 	// Get full summary
 	fullResp, err := c.Summarize(ctx, &SummarizeRequest{
 		Text:          text,
@@ -131,7 +131,7 @@ func (c *Clients) SummarizeMultiResolution(ctx context.Context, text string, mod
 		return "", "", "", 0, fmt.Errorf("full summary: %w", err)
 	}
 	full = fullResp.Summary
-	
+
 	return short, medium, full, importance, nil
 }
 
@@ -150,4 +150,3 @@ func (c *Clients) Classify(ctx context.Context, req *ClassifyRequest) (*Classify
 	}
 	return c.Router.Classify(ctx, req)
 }
-

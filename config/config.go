@@ -14,12 +14,12 @@ import (
 
 // Config holds all configuration for bifrost-extensions
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Routing  RoutingConfig  `mapstructure:"routing"`
-	Agents   AgentsConfig   `mapstructure:"agents"`
-	OAuth    OAuthConfig    `mapstructure:"oauth"`
-	Logging  LoggingConfig  `mapstructure:"logging"`
-	Plugins  PluginsConfig  `mapstructure:"plugins"`
+	Server  ServerConfig  `mapstructure:"server"`
+	Routing RoutingConfig `mapstructure:"routing"`
+	Agents  AgentsConfig  `mapstructure:"agents"`
+	OAuth   OAuthConfig   `mapstructure:"oauth"`
+	Logging LoggingConfig `mapstructure:"logging"`
+	Plugins PluginsConfig `mapstructure:"plugins"`
 }
 
 // ServerConfig holds HTTP server settings
@@ -43,10 +43,10 @@ type RoutingConfig struct {
 
 // RouteLLMConfig holds RouteLLM endpoint settings
 type RouteLLMConfig struct {
-	Enabled  bool    `mapstructure:"enabled"`
-	Endpoint string  `mapstructure:"endpoint"`
-	Model    string  `mapstructure:"model"`
-	Timeout  int     `mapstructure:"timeout_ms"`
+	Enabled   bool    `mapstructure:"enabled"`
+	Endpoint  string  `mapstructure:"endpoint"`
+	Model     string  `mapstructure:"model"`
+	Timeout   int     `mapstructure:"timeout_ms"`
 	Threshold float64 `mapstructure:"threshold"`
 }
 
@@ -157,4 +157,3 @@ func DefaultConfig() *Config {
 		// continued in next section...
 	}
 }
-

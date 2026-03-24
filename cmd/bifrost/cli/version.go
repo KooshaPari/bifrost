@@ -29,4 +29,3 @@ var versionCmd = &cobra.Command{
 		return nil
 	},
 }
-

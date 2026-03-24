@@ -14,8 +14,8 @@ import (
 // Used for 3-pillar optimization: Speed (maximize), Quality (maximize), Cost (minimize)
 type ModelProfile struct {
 	ID        uuid.UUID `json:"id"`
-	ModelKey  string    `json:"model_key"`  // e.g., "gpt-4o", "claude-3-opus"
-	Provider  string    `json:"provider"`   // e.g., "openai", "anthropic"
+	ModelKey  string    `json:"model_key"` // e.g., "gpt-4o", "claude-3-opus"
+	Provider  string    `json:"provider"`  // e.g., "openai", "anthropic"
 	UpdatedAt time.Time `json:"updated_at"`
 
 	// === SPEED METRICS (maximize) ===
@@ -42,9 +42,9 @@ type ModelProfile struct {
 // SpeedProfile captures all latency/throughput metrics
 type SpeedProfile struct {
 	// Time to First Token (TTFT) - critical for streaming
-	TTFTMsP50  float64 `json:"ttft_ms_p50"`
-	TTFTMsP95  float64 `json:"ttft_ms_p95"`
-	TTFTMsP99  float64 `json:"ttft_ms_p99"`
+	TTFTMsP50 float64 `json:"ttft_ms_p50"`
+	TTFTMsP95 float64 `json:"ttft_ms_p95"`
+	TTFTMsP99 float64 `json:"ttft_ms_p99"`
 
 	// Total latency (end-to-end)
 	LatencyMsP50 float64 `json:"latency_ms_p50"`
@@ -68,17 +68,17 @@ type QualityProfile struct {
 	OverallScore float64 `json:"overall_score"`
 
 	// Task-specific quality (from evaluations/feedback)
-	CodeGenQuality     float64 `json:"code_gen_quality"`     // 0-1
-	ReasoningQuality   float64 `json:"reasoning_quality"`    // 0-1
-	CreativeQuality    float64 `json:"creative_quality"`     // 0-1
-	InstructionFollow  float64 `json:"instruction_follow"`   // 0-1
-	FactualAccuracy    float64 `json:"factual_accuracy"`     // 0-1
+	CodeGenQuality    float64 `json:"code_gen_quality"`   // 0-1
+	ReasoningQuality  float64 `json:"reasoning_quality"`  // 0-1
+	CreativeQuality   float64 `json:"creative_quality"`   // 0-1
+	InstructionFollow float64 `json:"instruction_follow"` // 0-1
+	FactualAccuracy   float64 `json:"factual_accuracy"`   // 0-1
 
 	// Benchmark scores (normalized 0-1)
-	MMLUScore     float64 `json:"mmlu_score"`
+	MMLUScore      float64 `json:"mmlu_score"`
 	HumanEvalScore float64 `json:"humaneval_score"`
-	GSM8KScore    float64 `json:"gsm8k_score"`
-	MTBenchScore  float64 `json:"mtbench_score"`
+	GSM8KScore     float64 `json:"gsm8k_score"`
+	MTBenchScore   float64 `json:"mtbench_score"`
 
 	// User feedback signals
 	UserSatisfactionAvg float64 `json:"user_satisfaction_avg"` // 0-1
@@ -86,9 +86,9 @@ type QualityProfile struct {
 	RegenerationRate    float64 `json:"regeneration_rate"`     // lower is better
 
 	// Output characteristics
-	VerbosityScore    float64 `json:"verbosity_score"`    // avg tokens per response
-	CoherenceScore    float64 `json:"coherence_score"`    // 0-1
-	ContextRetention  float64 `json:"context_retention"`  // 0-1 (memory across turns)
+	VerbosityScore   float64 `json:"verbosity_score"`   // avg tokens per response
+	CoherenceScore   float64 `json:"coherence_score"`   // 0-1
+	ContextRetention float64 `json:"context_retention"` // 0-1 (memory across turns)
 }
 
 // CostProfile captures all cost-related metrics
@@ -98,7 +98,7 @@ type CostProfile struct {
 	OutputPricePerMTok float64 `json:"output_price_per_mtok"`
 
 	// Effective cost (actual observed)
-	EffectiveCostPerRequest float64 `json:"effective_cost_per_request"`
+	EffectiveCostPerRequest  float64 `json:"effective_cost_per_request"`
 	EffectiveCostPer1KTokens float64 `json:"effective_cost_per_1k_tokens"`
 
 	// Cost efficiency (quality per dollar)
@@ -129,10 +129,10 @@ type TaskProfile struct {
 	CompositeScore float64 `json:"composite_score"`
 
 	// Task-specific metrics
-	AvgLatencyMs    float64 `json:"avg_latency_ms"`
-	SuccessRate     float64 `json:"success_rate"`
-	AvgQuality      float64 `json:"avg_quality"`
-	AvgCostUSD      float64 `json:"avg_cost_usd"`
+	AvgLatencyMs float64 `json:"avg_latency_ms"`
+	SuccessRate  float64 `json:"success_rate"`
+	AvgQuality   float64 `json:"avg_quality"`
+	AvgCostUSD   float64 `json:"avg_cost_usd"`
 }
 
 // ReliabilityProfile captures reliability/availability metrics
@@ -154,8 +154,6 @@ type CapacityProfile struct {
 	ContextWindow      int     `json:"context_window"`
 	MaxOutputTokens    int     `json:"max_output_tokens"`
 }
-
-
 
 // ProfileStore manages all model profiles
 type ProfileStore struct {
@@ -322,16 +320,16 @@ func (ps *ProfileStore) computeTaskComposite(tp *TaskProfile, mp *ModelProfile) 
 
 // Observation represents a single request observation
 type Observation struct {
-	ModelKey        string
-	Provider        string
-	TaskType        string
-	LatencyMs       float64
-	TTFTMs          float64
-	InputTokens     int
-	OutputTokens    int
-	CostUSD         float64
-	Success         bool
-	QualityScore    float64 // 0-1, from evaluation or feedback
+	ModelKey         string
+	Provider         string
+	TaskType         string
+	LatencyMs        float64
+	TTFTMs           float64
+	InputTokens      int
+	OutputTokens     int
+	CostUSD          float64
+	Success          bool
+	QualityScore     float64 // 0-1, from evaluation or feedback
 	UserSatisfaction float64 // 0-1, from explicit feedback
 }
 

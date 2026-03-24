@@ -19,11 +19,11 @@ var datasetListCmd = &cobra.Command{
 		fmt.Println("Available Datasets:")
 		fmt.Println("===================")
 		datasets := []struct {
-			name     string
-			source   string
-			size     string
-			quality  string
-			weight   float64
+			name    string
+			source  string
+			size    string
+			quality string
+			weight  float64
 		}{
 			{"WildChat", "HuggingFace", "1M", "HIGH", 2.0},
 			{"LMSYS Chat", "HuggingFace", "1M", "HIGH", 2.0},
@@ -76,4 +76,3 @@ var datasetStatsCmd = &cobra.Command{
 func init() {
 	datasetCmd.AddCommand(datasetListCmd, datasetLoadCmd, datasetStatsCmd)
 }
-

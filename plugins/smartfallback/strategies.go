@@ -185,4 +185,3 @@ func (s *BudgetAwareStrategy) IsThrottled() bool {
 func (s *BudgetAwareStrategy) IsBlocked() bool {
 	return s.GetBudgetUsage() >= s.config.BudgetBlockThreshold
 }
-

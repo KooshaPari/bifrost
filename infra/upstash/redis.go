@@ -113,14 +113,14 @@ func (c *RedisClient) restCommand(ctx context.Context, args ...interface{}) (jso
 
 // RateLimitInfo returns Upstash rate limit info
 type RateLimitInfo struct {
-	DailyRequests    int64     `json:"daily_requests"`
-	DailyLimit       int64     `json:"daily_limit"`
-	RemainingToday   int64     `json:"remaining_today"`
-	ResetAt          time.Time `json:"reset_at"`
-	BurstRequests    int64     `json:"burst_requests"`
-	BurstLimit       int64     `json:"burst_limit"`
-	RemainingBurst   int64     `json:"remaining_burst"`
-	BurstResetAt     time.Time `json:"burst_reset_at"`
+	DailyRequests  int64     `json:"daily_requests"`
+	DailyLimit     int64     `json:"daily_limit"`
+	RemainingToday int64     `json:"remaining_today"`
+	ResetAt        time.Time `json:"reset_at"`
+	BurstRequests  int64     `json:"burst_requests"`
+	BurstLimit     int64     `json:"burst_limit"`
+	RemainingBurst int64     `json:"remaining_burst"`
+	BurstResetAt   time.Time `json:"burst_reset_at"`
 }
 
 // GetRateLimitInfo gets current Upstash rate limit status
@@ -140,4 +140,3 @@ func (c *RedisClient) GetRateLimitInfo(ctx context.Context) (*RateLimitInfo, err
 	}
 	return &info, nil
 }
-

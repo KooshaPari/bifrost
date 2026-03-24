@@ -151,4 +151,3 @@ func (c *Client) CreatePolicyBlock(ctx context.Context, policyName, roleID, reso
 	}
 	return nil
 }
-

@@ -198,4 +198,3 @@ func (w *SemanticResearchWorkflow) storeProfile(ctx worker.HatchetContext) (*Mod
 	ctx.Log(fmt.Sprintf("Stored profile for model %s", profile.ModelID))
 	return &profile, nil
 }
-

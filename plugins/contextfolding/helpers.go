@@ -85,4 +85,3 @@ func (cf *ContextFolding) RetrieveRelevantContext(
 	// TODO: Implement once we have embedding generation
 	return nil, nil
 }
-

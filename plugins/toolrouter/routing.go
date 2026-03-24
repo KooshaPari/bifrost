@@ -143,4 +143,3 @@ func (tr *ToolRouter) applyProfile(tools []schemas.Tool, profile slm.ToolProfile
 func (tr *ToolRouter) trackToolUsage(ctx context.Context, resp *schemas.BifrostResponse) {
 	// TODO: Extract tool calls from response and record metrics
 }
-

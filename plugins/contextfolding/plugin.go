@@ -17,24 +17,24 @@ import (
 type ContextStrategy string
 
 const (
-	StrategyRawOnly            ContextStrategy = "raw_only"
-	StrategyShortSummary       ContextStrategy = "short_summary"
-	StrategyMediumSummary      ContextStrategy = "medium_summary"
-	StrategyFullSummary        ContextStrategy = "full_summary"
+	StrategyRawOnly               ContextStrategy = "raw_only"
+	StrategyShortSummary          ContextStrategy = "short_summary"
+	StrategyMediumSummary         ContextStrategy = "medium_summary"
+	StrategyFullSummary           ContextStrategy = "full_summary"
 	StrategyMediumWithRawOnDemand ContextStrategy = "medium_summary_with_raw_on_demand"
-	StrategyAdaptive           ContextStrategy = "adaptive"
+	StrategyAdaptive              ContextStrategy = "adaptive"
 )
 
 // Config configures the context folding plugin
 type Config struct {
 	// Token budgets
-	MaxContextTokens     int `json:"max_context_tokens"`
-	ReserveOutputTokens  int `json:"reserve_output_tokens"`
-	SystemPromptTokens   int `json:"system_prompt_tokens"`
+	MaxContextTokens    int `json:"max_context_tokens"`
+	ReserveOutputTokens int `json:"reserve_output_tokens"`
+	SystemPromptTokens  int `json:"system_prompt_tokens"`
 
 	// Summarization thresholds
-	SummarizeThreshold   int     `json:"summarize_threshold"`   // tokens before summarizing
-	ImportanceThreshold  float64 `json:"importance_threshold"`  // min importance to include
+	SummarizeThreshold  int     `json:"summarize_threshold"`  // tokens before summarizing
+	ImportanceThreshold float64 `json:"importance_threshold"` // min importance to include
 
 	// Retrieval settings
 	MaxRetrievedSegments int `json:"max_retrieved_segments"`
@@ -159,4 +159,3 @@ type ContextInfo struct {
 type contextKey string
 
 const contextInfoKey contextKey = "context_info"
-

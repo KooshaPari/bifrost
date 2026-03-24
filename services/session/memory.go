@@ -144,4 +144,3 @@ func (hm *HierarchicalMemory) Delete(ctx context.Context, key string, scope Memo
 	}
 	return nil
 }
-

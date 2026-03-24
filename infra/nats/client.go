@@ -110,12 +110,12 @@ func (c *Client) Close() {
 type JobType string
 
 const (
-	JobTypeEval          JobType = "eval"
-	JobTypeProfiling     JobType = "profiling"
-	JobTypeBanditUpdate  JobType = "bandit_update"
-	JobTypeSummarize     JobType = "summarize"
-	JobTypeEmbedding     JobType = "embedding"
-	JobTypeMetricsSync   JobType = "metrics_sync"
+	JobTypeEval         JobType = "eval"
+	JobTypeProfiling    JobType = "profiling"
+	JobTypeBanditUpdate JobType = "bandit_update"
+	JobTypeSummarize    JobType = "summarize"
+	JobTypeEmbedding    JobType = "embedding"
+	JobTypeMetricsSync  JobType = "metrics_sync"
 )
 
 // Job represents a background job
@@ -140,18 +140,17 @@ type EvalPayload struct {
 
 // BanditUpdatePayload represents a bandit update job
 type BanditUpdatePayload struct {
-	ModelID  string `json:"model_id"`
-	RoleID   string `json:"role_id"`
-	Success  bool   `json:"success"`
-	Latency  int    `json:"latency_ms"`
-	Cost     float64 `json:"cost"`
+	ModelID string  `json:"model_id"`
+	RoleID  string  `json:"role_id"`
+	Success bool    `json:"success"`
+	Latency int     `json:"latency_ms"`
+	Cost    float64 `json:"cost"`
 }
 
 // SummarizePayload represents a summarization job
 type SummarizePayload struct {
-	SessionID      string `json:"session_id"`
-	SegmentID      string `json:"segment_id"`
-	Content        string `json:"content"`
+	SessionID      string   `json:"session_id"`
+	SegmentID      string   `json:"segment_id"`
+	Content        string   `json:"content"`
 	DesiredLengths []string `json:"desired_lengths"` // short, medium, long
 }
-

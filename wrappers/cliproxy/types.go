@@ -86,16 +86,16 @@ type QuotaState struct {
 
 // AuthInfo provides a summary of an auth entry
 type AuthInfo struct {
-	ID           string            `json:"id"`
-	Provider     string            `json:"provider"`
-	Label        string            `json:"label"`
-	Status       string            `json:"status"`
-	Disabled     bool              `json:"disabled"`
-	CreatedAt    time.Time         `json:"created_at"`
-	UpdatedAt    time.Time         `json:"updated_at"`
-	LastUsed     time.Time         `json:"last_used,omitempty"`
-	ModelCount   int               `json:"model_count"`
-	Attributes   map[string]string `json:"attributes,omitempty"`
+	ID         string            `json:"id"`
+	Provider   string            `json:"provider"`
+	Label      string            `json:"label"`
+	Status     string            `json:"status"`
+	Disabled   bool              `json:"disabled"`
+	CreatedAt  time.Time         `json:"created_at"`
+	UpdatedAt  time.Time         `json:"updated_at"`
+	LastUsed   time.Time         `json:"last_used,omitempty"`
+	ModelCount int               `json:"model_count"`
+	Attributes map[string]string `json:"attributes,omitempty"`
 }
 
 // ToAuthInfo converts an Auth to AuthInfo summary
@@ -207,4 +207,3 @@ func (b *OptionsBuilder) WithMetadata(metadata map[string]any) *OptionsBuilder {
 func (b *OptionsBuilder) Build() Options {
 	return b.opts
 }
-

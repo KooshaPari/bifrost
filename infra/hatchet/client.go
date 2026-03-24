@@ -118,4 +118,3 @@ func (c *Client) TriggerPolicyScan(ctx context.Context, namespace string) error 
 		"namespace": namespace,
 	})
 }
-

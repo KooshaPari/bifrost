@@ -12,7 +12,7 @@ func (r *mutationResolver) UpdateModelStatus(ctx context.Context, id string, ava
 	if r.models == nil {
 		return nil, fmt.Errorf("model store not configured")
 	}
-	
+
 	updated, err := r.models.UpdateModelStatus(ctx, id, available)
 	if err != nil {
 		r.logger.ErrorContext(ctx, "failed to update model status",
@@ -37,7 +37,7 @@ func (r *mutationResolver) CreatePolicy(ctx context.Context, input model.PolicyI
 	if r.policies == nil {
 		return nil, fmt.Errorf("policy store not configured")
 	}
-	
+
 	policy, err := r.policies.CreatePolicy(ctx, input)
 	if err != nil {
 		r.logger.ErrorContext(ctx, "failed to create policy",
@@ -61,7 +61,7 @@ func (r *mutationResolver) UpdatePolicy(ctx context.Context, id string, input mo
 	if r.policies == nil {
 		return nil, fmt.Errorf("policy store not configured")
 	}
-	
+
 	policy, err := r.policies.UpdatePolicy(ctx, id, input)
 	if err != nil {
 		r.logger.ErrorContext(ctx, "failed to update policy",
@@ -79,7 +79,7 @@ func (r *mutationResolver) ActivatePolicy(ctx context.Context, id string) (*mode
 	if r.policies == nil {
 		return nil, fmt.Errorf("policy store not configured")
 	}
-	
+
 	policy, err := r.policies.ActivatePolicy(ctx, id)
 	if err != nil {
 		r.logger.ErrorContext(ctx, "failed to activate policy",
@@ -98,7 +98,7 @@ func (r *mutationResolver) DeactivatePolicy(ctx context.Context, id string) (*mo
 	if r.policies == nil {
 		return nil, fmt.Errorf("policy store not configured")
 	}
-	
+
 	policy, err := r.policies.DeactivatePolicy(ctx, id)
 	if err != nil {
 		r.logger.ErrorContext(ctx, "failed to deactivate policy",
@@ -117,7 +117,7 @@ func (r *mutationResolver) CreateBenchmark(ctx context.Context, input model.Benc
 	if r.benchmarks == nil {
 		return nil, fmt.Errorf("benchmark store not configured")
 	}
-	
+
 	benchmark, err := r.benchmarks.CreateBenchmark(ctx, input)
 	if err != nil {
 		r.logger.ErrorContext(ctx, "failed to create benchmark",
@@ -141,7 +141,7 @@ func (r *mutationResolver) RefreshProviderToken(ctx context.Context, providerID 
 	if r.providers == nil {
 		return nil, fmt.Errorf("provider store not configured")
 	}
-	
+
 	account, err := r.providers.RefreshToken(ctx, providerID, accountID)
 	if err != nil {
 		r.logger.ErrorContext(ctx, "failed to refresh token",
@@ -159,4 +159,3 @@ func (r *mutationResolver) RefreshProviderToken(ctx context.Context, providerID 
 
 	return account, nil
 }
-

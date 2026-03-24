@@ -10,7 +10,7 @@ import (
 
 // Resolver is the root resolver that provides access to all sub-resolvers.
 type Resolver struct {
-	db     *db.DB
+	db *db.DB
 	// Add other dependencies as needed (NATS, Neo4j, etc.)
 }
 

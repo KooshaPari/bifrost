@@ -170,4 +170,3 @@ func (c *OpenRouterClient) doRequest(ctx context.Context, endpoint string, reqBo
 
 	return &result, nil
 }
-

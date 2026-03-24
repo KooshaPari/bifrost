@@ -242,4 +242,3 @@ func (ir *IntelligentRouter) logDecisionOutcome(decision *RoutingDecision, resp 
 	// TODO: Implement logging for learning system
 	// This would record: decision, response success/failure, latency, etc.
 }
-

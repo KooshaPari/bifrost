@@ -80,7 +80,7 @@ type Config struct {
 	// Cost engine settings
 	UseCostEngine        bool    `json:"use_cost_engine"`
 	MaxCostPerRequest    float64 `json:"max_cost_per_request"`
-	PreferSubscriptions  bool    `json:"prefer_subscriptions"`  // prefer subscription buckets
+	PreferSubscriptions  bool    `json:"prefer_subscriptions"`   // prefer subscription buckets
 	AllowScarceEndpoints bool    `json:"allow_scarce_endpoints"` // allow scarce_premium
 }
 
@@ -202,4 +202,3 @@ func (ir *IntelligentRouter) Cleanup() error {
 type contextKey string
 
 const routingDecisionKey contextKey = "routing_decision"
-

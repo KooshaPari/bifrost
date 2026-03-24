@@ -120,9 +120,9 @@ func (fe *FeatureExtractor) computeFeatures(query string) [25]float64 {
 	features[2] = float64(countSentences(query)) / 50.0
 
 	// Feature 5-9: Complexity indicators
-	features[5] = boolToFloat(containsString(query, "```"))     // Code blocks
+	features[5] = boolToFloat(containsString(query, "```"))      // Code blocks
 	features[6] = boolToFloat(containsString(query, "function")) // Function mentions
-	features[7] = boolToFloat(containsString(query, "explain")) // Explanation requests
+	features[7] = boolToFloat(containsString(query, "explain"))  // Explanation requests
 
 	// Feature 10-14: Domain indicators
 	features[10] = boolToFloat(containsString(query, "math"))
@@ -150,4 +150,3 @@ func boolToFloat(b bool) float64 {
 	}
 	return 0.0
 }
-

@@ -107,4 +107,3 @@ func (mgr *DistributedManager) cleanupExpiredSessions() {
 		}
 	}
 }
-

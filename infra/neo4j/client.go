@@ -12,7 +12,7 @@ import (
 
 // Config configures the Neo4j client
 type Config struct {
-	URI      string `json:"uri"`      // bolt://localhost:7687 or neo4j+s://xxx.auradb.io
+	URI      string `json:"uri"` // bolt://localhost:7687 or neo4j+s://xxx.auradb.io
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Database string `json:"database"` // defaults to "neo4j"
@@ -179,4 +179,3 @@ func (c *Client) checkBlocked(ctx context.Context, session neo4j.SessionWithCont
 
 	return nil, result.Err()
 }
-

@@ -73,4 +73,3 @@ func AgentCommand(agentType AgentType) (string, []string) {
 		return "", nil
 	}
 }
-

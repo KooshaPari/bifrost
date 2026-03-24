@@ -501,4 +501,3 @@ func GenericProfile() *ModelBehaviorProfile {
 		ContextDegradation: 0.15,
 	}
 }
-

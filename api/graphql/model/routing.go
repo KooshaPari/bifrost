@@ -4,26 +4,26 @@ import "time"
 
 // RoutingHistory contains routing decision history
 type RoutingHistory struct {
-	ID               string               `json:"id"`
-	Timestamp        time.Time            `json:"timestamp"`
-	SessionID        *string              `json:"sessionId,omitempty"`
-	UserID           *string              `json:"userId,omitempty"`
-	ProjectID        *string              `json:"projectId,omitempty"`
-	PromptHash       string               `json:"promptHash"`
-	PromptLength     int                  `json:"promptLength"`
-	Capabilities     []Capability         `json:"capabilities"`
-	SelectedModel    *Model               `json:"selectedModel"`
-	Alternatives     []*RoutingAlternative `json:"alternatives"`
-	Confidence       float64              `json:"confidence"`
-	Reasoning        string               `json:"reasoning"`
-	Strategies       []string             `json:"strategies"`
+	ID               string                 `json:"id"`
+	Timestamp        time.Time              `json:"timestamp"`
+	SessionID        *string                `json:"sessionId,omitempty"`
+	UserID           *string                `json:"userId,omitempty"`
+	ProjectID        *string                `json:"projectId,omitempty"`
+	PromptHash       string                 `json:"promptHash"`
+	PromptLength     int                    `json:"promptLength"`
+	Capabilities     []Capability           `json:"capabilities"`
+	SelectedModel    *Model                 `json:"selectedModel"`
+	Alternatives     []*RoutingAlternative  `json:"alternatives"`
+	Confidence       float64                `json:"confidence"`
+	Reasoning        string                 `json:"reasoning"`
+	Strategies       []string               `json:"strategies"`
 	VoterScores      map[string]interface{} `json:"voterScores,omitempty"`
-	TaskType         string               `json:"taskType"`
-	Domain           string               `json:"domain"`
-	RoutingLatencyMs int                  `json:"routingLatencyMs"`
-	TotalLatencyMs   *int                 `json:"totalLatencyMs,omitempty"`
-	Success          bool                 `json:"success"`
-	Feedback         *RoutingFeedback     `json:"feedback,omitempty"`
+	TaskType         string                 `json:"taskType"`
+	Domain           string                 `json:"domain"`
+	RoutingLatencyMs int                    `json:"routingLatencyMs"`
+	TotalLatencyMs   *int                   `json:"totalLatencyMs,omitempty"`
+	Success          bool                   `json:"success"`
+	Feedback         *RoutingFeedback       `json:"feedback,omitempty"`
 }
 
 type RoutingAlternative struct {
@@ -33,10 +33,10 @@ type RoutingAlternative struct {
 }
 
 type RoutingFeedback struct {
-	Rating         *int    `json:"rating,omitempty"`
-	Correct        *bool   `json:"correct,omitempty"`
-	PreferredModel *Model  `json:"preferredModel,omitempty"`
-	Comment        *string `json:"comment,omitempty"`
+	Rating         *int      `json:"rating,omitempty"`
+	Correct        *bool     `json:"correct,omitempty"`
+	PreferredModel *Model    `json:"preferredModel,omitempty"`
+	Comment        *string   `json:"comment,omitempty"`
 	ProvidedAt     time.Time `json:"providedAt"`
 }
 
@@ -66,20 +66,20 @@ type RoutingDecision struct {
 
 // Policy types
 type Policy struct {
-	ID           string              `json:"id"`
-	Name         string              `json:"name"`
-	Description  *string             `json:"description,omitempty"`
-	Type         PolicyType          `json:"type"`
-	Active       bool                `json:"active"`
-	Priority     int                 `json:"priority"`
-	Conditions   []*PolicyCondition  `json:"conditions"`
-	Actions      []*PolicyAction     `json:"actions"`
-	Scope        *PolicyScope        `json:"scope"`
-	CreatedBy    string              `json:"createdBy"`
-	CreatedAt    time.Time           `json:"createdAt"`
-	UpdatedAt    time.Time           `json:"updatedAt"`
-	AppliedCount int                 `json:"appliedCount"`
-	LastApplied  *time.Time          `json:"lastApplied,omitempty"`
+	ID           string             `json:"id"`
+	Name         string             `json:"name"`
+	Description  *string            `json:"description,omitempty"`
+	Type         PolicyType         `json:"type"`
+	Active       bool               `json:"active"`
+	Priority     int                `json:"priority"`
+	Conditions   []*PolicyCondition `json:"conditions"`
+	Actions      []*PolicyAction    `json:"actions"`
+	Scope        *PolicyScope       `json:"scope"`
+	CreatedBy    string             `json:"createdBy"`
+	CreatedAt    time.Time          `json:"createdAt"`
+	UpdatedAt    time.Time          `json:"updatedAt"`
+	AppliedCount int                `json:"appliedCount"`
+	LastApplied  *time.Time         `json:"lastApplied,omitempty"`
 }
 
 type PolicyCondition struct {
@@ -101,13 +101,13 @@ type PolicyScope struct {
 
 // Input types
 type PolicyInput struct {
-	Name        string                 `json:"name"`
-	Description *string                `json:"description,omitempty"`
-	Type        PolicyType             `json:"type"`
-	Priority    *int                   `json:"priority,omitempty"`
+	Name        string                  `json:"name"`
+	Description *string                 `json:"description,omitempty"`
+	Type        PolicyType              `json:"type"`
+	Priority    *int                    `json:"priority,omitempty"`
 	Conditions  []*PolicyConditionInput `json:"conditions"`
 	Actions     []*PolicyActionInput    `json:"actions"`
-	Scope       PolicyScopeInput       `json:"scope"`
+	Scope       PolicyScopeInput        `json:"scope"`
 }
 
 type PolicyConditionInput struct {
@@ -126,4 +126,3 @@ type PolicyScopeInput struct {
 	Projects []string `json:"projects,omitempty"`
 	Global   *bool    `json:"global,omitempty"`
 }
-

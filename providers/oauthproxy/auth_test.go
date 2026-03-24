@@ -151,4 +151,3 @@ func TestStoredTokenExpiry(t *testing.T) {
 		t.Error("token should not be expired")
 	}
 }
-

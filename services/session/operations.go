@@ -188,4 +188,3 @@ func (t *Tracker) GetDominantDomain(ctx context.Context, sessionID string) (stri
 
 	return maxDomain, nil
 }
-

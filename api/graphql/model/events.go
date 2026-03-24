@@ -4,12 +4,12 @@ import "time"
 
 // ProviderHealthEvent for subscriptions
 type ProviderHealthEvent struct {
-	Provider      *Provider      `json:"provider"`
-	Status        ProviderStatus `json:"status"`
+	Provider       *Provider      `json:"provider"`
+	Status         ProviderStatus `json:"status"`
 	PreviousStatus ProviderStatus `json:"previousStatus"`
-	Message       *string        `json:"message,omitempty"`
-	Timestamp     time.Time      `json:"timestamp"`
-	AffectedModels []*Model      `json:"affectedModels"`
+	Message        *string        `json:"message,omitempty"`
+	Timestamp      time.Time      `json:"timestamp"`
+	AffectedModels []*Model       `json:"affectedModels"`
 }
 
 // ModelAvailabilityEvent for subscriptions
@@ -19,4 +19,3 @@ type ModelAvailabilityEvent struct {
 	Reason    *string   `json:"reason,omitempty"`
 	Timestamp time.Time `json:"timestamp"`
 }
-

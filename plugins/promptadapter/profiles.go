@@ -6,11 +6,11 @@ package promptadapter
 type FormatStyle int
 
 const (
-	FormatNatural FormatStyle = iota // Natural language, minimal structure
-	FormatJSON                       // Structured JSON output
-	FormatXML                        // XML tags for structure
-	FormatMarkdown                   // Markdown formatting
-	FormatYAML                       // YAML structure
+	FormatNatural  FormatStyle = iota // Natural language, minimal structure
+	FormatJSON                        // Structured JSON output
+	FormatXML                         // XML tags for structure
+	FormatMarkdown                    // Markdown formatting
+	FormatYAML                        // YAML structure
 )
 
 func (f FormatStyle) String() string {
@@ -51,10 +51,10 @@ const (
 type ThinkingStyle int
 
 const (
-	ThinkingExplicit    ThinkingStyle = iota // "Let's think step by step"
-	ThinkingImplicit                         // Thinks without explicit prompt
-	ThinkingStructured                       // Structured reasoning blocks
-	ThinkingMinimal                          // Minimal reasoning, direct answers
+	ThinkingExplicit   ThinkingStyle = iota // "Let's think step by step"
+	ThinkingImplicit                        // Thinks without explicit prompt
+	ThinkingStructured                      // Structured reasoning blocks
+	ThinkingMinimal                         // Minimal reasoning, direct answers
 )
 
 // Quirk represents model-specific behaviors to account for
@@ -72,28 +72,28 @@ type ModelBehaviorProfile struct {
 	Provider      string   `json:"provider"`       // e.g., "openai", "anthropic", "google"
 
 	// Format preferences
-	PreferredFormat    FormatStyle     `json:"preferred_format"`
-	SupportedFormats   []FormatStyle   `json:"supported_formats"`
-	SystemPromptStyle  SystemPromptStyle `json:"system_prompt_style"`
-	ExamplePlacement   ExamplePlacement  `json:"example_placement"`
-	ConstraintStyle    ConstraintStyle   `json:"constraint_style"`
-	ThinkingStyle      ThinkingStyle     `json:"thinking_style"`
+	PreferredFormat   FormatStyle       `json:"preferred_format"`
+	SupportedFormats  []FormatStyle     `json:"supported_formats"`
+	SystemPromptStyle SystemPromptStyle `json:"system_prompt_style"`
+	ExamplePlacement  ExamplePlacement  `json:"example_placement"`
+	ConstraintStyle   ConstraintStyle   `json:"constraint_style"`
+	ThinkingStyle     ThinkingStyle     `json:"thinking_style"`
 
 	// Token efficiency
-	TokenEfficiency   float64 `json:"token_efficiency"`    // 0-1, higher = more concise
-	VerbosityBias     float64 `json:"verbosity_bias"`      // -1 to 1, negative = concise
-	OptimalPromptLen  int     `json:"optimal_prompt_len"`  // Ideal prompt token count
+	TokenEfficiency  float64 `json:"token_efficiency"`   // 0-1, higher = more concise
+	VerbosityBias    float64 `json:"verbosity_bias"`     // -1 to 1, negative = concise
+	OptimalPromptLen int     `json:"optimal_prompt_len"` // Ideal prompt token count
 
 	// Special capabilities
-	SupportsImages     bool `json:"supports_images"`
-	SupportsTools      bool `json:"supports_tools"`
-	SupportsFunctions  bool `json:"supports_functions"`
-	SupportsStreaming  bool `json:"supports_streaming"`
-	SupportsJSON       bool `json:"supports_json_mode"`
-	SupportsReasoning  bool `json:"supports_reasoning"` // Extended thinking (o1, claude reasoning)
+	SupportsImages    bool `json:"supports_images"`
+	SupportsTools     bool `json:"supports_tools"`
+	SupportsFunctions bool `json:"supports_functions"`
+	SupportsStreaming bool `json:"supports_streaming"`
+	SupportsJSON      bool `json:"supports_json_mode"`
+	SupportsReasoning bool `json:"supports_reasoning"` // Extended thinking (o1, claude reasoning)
 
 	// Special tokens and markers
-	SpecialTokens   map[string]string `json:"special_tokens"`   // e.g., "<|im_start|>" for ChatML
+	SpecialTokens    map[string]string `json:"special_tokens"`    // e.g., "<|im_start|>" for ChatML
 	PreferredMarkers map[string]string `json:"preferred_markers"` // e.g., "### " for headings
 
 	// Known quirks and behaviors
@@ -104,15 +104,14 @@ type ModelBehaviorProfile struct {
 	PrefersExamples       bool    `json:"prefers_examples"`
 	MinExamples           int     `json:"min_examples"`
 	MaxExamples           int     `json:"max_examples"`
-	PrefersPositive       bool    `json:"prefers_positive"` // "Do X" vs "Don't do Y"
+	PrefersPositive       bool    `json:"prefers_positive"`  // "Do X" vs "Don't do Y"
 	HandlesAmbiguity      float64 `json:"handles_ambiguity"` // 0-1, higher = better
 
 	// Quality characteristics by task
 	TaskStrengths map[string]float64 `json:"task_strengths"` // task -> 0-1 score
 
 	// Context window characteristics
-	ContextWindow     int     `json:"context_window"`
-	EffectiveContext  int     `json:"effective_context"`  // Context where quality doesn't degrade
+	ContextWindow      int     `json:"context_window"`
+	EffectiveContext   int     `json:"effective_context"`   // Context where quality doesn't degrade
 	ContextDegradation float64 `json:"context_degradation"` // Quality loss per 10k tokens over effective
 }
-

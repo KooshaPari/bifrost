@@ -116,4 +116,3 @@ redis:
 
 	return nil
 }
-

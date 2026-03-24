@@ -80,4 +80,3 @@ var pluginConfigCmd = &cobra.Command{
 func init() {
 	pluginCmd.AddCommand(pluginListCmd, pluginEnableCmd, pluginDisableCmd, pluginConfigCmd)
 }
-

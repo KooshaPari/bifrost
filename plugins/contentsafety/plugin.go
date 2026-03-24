@@ -22,36 +22,36 @@ type ToxicityScore struct {
 // EmotionScore represents GoEmotions analysis results (28 emotions)
 type EmotionScore struct {
 	// Positive emotions
-	Admiration   float64 `json:"admiration"`
-	Amusement    float64 `json:"amusement"`
-	Approval     float64 `json:"approval"`
-	Caring       float64 `json:"caring"`
-	Curiosity    float64 `json:"curiosity"`
-	Desire       float64 `json:"desire"`
-	Excitement   float64 `json:"excitement"`
-	Gratitude    float64 `json:"gratitude"`
-	Joy          float64 `json:"joy"`
-	Love         float64 `json:"love"`
-	Optimism     float64 `json:"optimism"`
-	Pride        float64 `json:"pride"`
-	Relief       float64 `json:"relief"`
+	Admiration float64 `json:"admiration"`
+	Amusement  float64 `json:"amusement"`
+	Approval   float64 `json:"approval"`
+	Caring     float64 `json:"caring"`
+	Curiosity  float64 `json:"curiosity"`
+	Desire     float64 `json:"desire"`
+	Excitement float64 `json:"excitement"`
+	Gratitude  float64 `json:"gratitude"`
+	Joy        float64 `json:"joy"`
+	Love       float64 `json:"love"`
+	Optimism   float64 `json:"optimism"`
+	Pride      float64 `json:"pride"`
+	Relief     float64 `json:"relief"`
 	// Negative emotions
-	Anger        float64 `json:"anger"`
-	Annoyance    float64 `json:"annoyance"`
-	Confusion    float64 `json:"confusion"`
+	Anger          float64 `json:"anger"`
+	Annoyance      float64 `json:"annoyance"`
+	Confusion      float64 `json:"confusion"`
 	Disappointment float64 `json:"disappointment"`
-	Disapproval  float64 `json:"disapproval"`
-	Disgust      float64 `json:"disgust"`
-	Embarrassment float64 `json:"embarrassment"`
-	Fear         float64 `json:"fear"`
-	Grief        float64 `json:"grief"`
-	Nervousness  float64 `json:"nervousness"`
-	Remorse      float64 `json:"remorse"`
-	Sadness      float64 `json:"sadness"`
+	Disapproval    float64 `json:"disapproval"`
+	Disgust        float64 `json:"disgust"`
+	Embarrassment  float64 `json:"embarrassment"`
+	Fear           float64 `json:"fear"`
+	Grief          float64 `json:"grief"`
+	Nervousness    float64 `json:"nervousness"`
+	Remorse        float64 `json:"remorse"`
+	Sadness        float64 `json:"sadness"`
 	// Neutral
-	Neutral      float64 `json:"neutral"`
-	Realization  float64 `json:"realization"`
-	Surprise     float64 `json:"surprise"`
+	Neutral     float64 `json:"neutral"`
+	Realization float64 `json:"realization"`
+	Surprise    float64 `json:"surprise"`
 }
 
 // ContentAnalysis combines toxicity and emotion analysis
@@ -66,25 +66,25 @@ type ContentAnalysis struct {
 
 // Config configures the content safety plugin
 type Config struct {
-	Enabled              bool    `json:"enabled"`
-	DetoxifyEndpoint     string  `json:"detoxify_endpoint"`
-	GoEmotionsEndpoint   string  `json:"go_emotions_endpoint"`
-	BlockThreshold       float64 `json:"block_threshold"`        // Toxicity > this = block
-	FlagThreshold        float64 `json:"flag_threshold"`         // Toxicity > this = flag/log
-	CheckResponses       bool    `json:"check_responses"`        // Also check LLM outputs
-	EmotionBasedRouting  bool    `json:"emotion_based_routing"`  // Use emotions for routing
+	Enabled             bool    `json:"enabled"`
+	DetoxifyEndpoint    string  `json:"detoxify_endpoint"`
+	GoEmotionsEndpoint  string  `json:"go_emotions_endpoint"`
+	BlockThreshold      float64 `json:"block_threshold"`       // Toxicity > this = block
+	FlagThreshold       float64 `json:"flag_threshold"`        // Toxicity > this = flag/log
+	CheckResponses      bool    `json:"check_responses"`       // Also check LLM outputs
+	EmotionBasedRouting bool    `json:"emotion_based_routing"` // Use emotions for routing
 }
 
 // DefaultConfig returns sensible defaults
 func DefaultConfig() *Config {
 	return &Config{
-		Enabled:              true,
-		DetoxifyEndpoint:     "http://localhost:8014/v1/toxicity",
-		GoEmotionsEndpoint:   "http://localhost:8013/v1/emotions",
-		BlockThreshold:       0.85,
-		FlagThreshold:        0.5,
-		CheckResponses:       true,
-		EmotionBasedRouting:  true,
+		Enabled:             true,
+		DetoxifyEndpoint:    "http://localhost:8014/v1/toxicity",
+		GoEmotionsEndpoint:  "http://localhost:8013/v1/emotions",
+		BlockThreshold:      0.85,
+		FlagThreshold:       0.5,
+		CheckResponses:      true,
+		EmotionBasedRouting: true,
 	}
 }
 
@@ -233,4 +233,3 @@ func extractResponseText(resp *schemas.BifrostResponse) string {
 	}
 	return ""
 }
-

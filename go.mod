@@ -1,8 +1,9 @@
 module github.com/kooshapari/bifrost-extensions
 
-go 1.24.3
+go 1.23
 
 require (
+	github.com/KooshaPari/phenotype-go-kit v0.0.0
 	github.com/coder/agentapi v0.0.0
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/go-chi/cors v1.2.2
@@ -10,7 +11,6 @@ require (
 	github.com/hatchet-dev/hatchet v0.73.73
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/kooshapari/CLIProxyAPI/v7 v7.0.0
-	github.com/KooshaPari/phenotype-go-kit v0.0.0
 	github.com/maximhq/bifrost/core v1.2.30
 	github.com/nats-io/nats.go v1.47.0
 	github.com/neo4j/neo4j-go-driver/v5 v5.28.4

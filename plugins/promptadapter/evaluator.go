@@ -21,23 +21,23 @@ type EvaluationMetric int
 const (
 	MetricExactMatch EvaluationMetric = iota
 	MetricContains
-	MetricSemantic   // Requires embedding comparison
-	MetricLLMJudge   // Use LLM to judge quality
+	MetricSemantic // Requires embedding comparison
+	MetricLLMJudge // Use LLM to judge quality
 	MetricCustom
 )
 
 // EvaluationResult captures the result of evaluating a prompt variant
 type EvaluationResult struct {
-	PromptVariant   string        `json:"prompt_variant"`
-	SourceModel     string        `json:"source_model"`
-	TargetModel     string        `json:"target_model"`
-	
+	PromptVariant string `json:"prompt_variant"`
+	SourceModel   string `json:"source_model"`
+	TargetModel   string `json:"target_model"`
+
 	// Scores
-	Accuracy        float64       `json:"accuracy"`
-	Latency         time.Duration `json:"latency"`
-	TokensUsed      int           `json:"tokens_used"`
-	CostEstimate    float64       `json:"cost_estimate"`
-	
+	Accuracy     float64       `json:"accuracy"`
+	Latency      time.Duration `json:"latency"`
+	TokensUsed   int           `json:"tokens_used"`
+	CostEstimate float64       `json:"cost_estimate"`
+
 	// Details
 	TotalCases      int           `json:"total_cases"`
 	PassedCases     int           `json:"passed_cases"`
@@ -47,9 +47,9 @@ type EvaluationResult struct {
 
 // FailureCase captures details about a failed test case
 type FailureCase struct {
-	TestCase       TestCase `json:"test_case"`
-	ActualOutput   string   `json:"actual_output"`
-	FailureReason  string   `json:"failure_reason"`
+	TestCase      TestCase `json:"test_case"`
+	ActualOutput  string   `json:"actual_output"`
+	FailureReason string   `json:"failure_reason"`
 }
 
 // ModelInvoker is the interface for calling models
@@ -83,12 +83,12 @@ func (e *Evaluator) EvaluateVariants(
 	results := make([]*EvaluationResult, len(variants))
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(variants))
-	
+
 	for i, variant := range variants {
 		wg.Add(1)
 		go func(idx int, prompt string) {
 			defer wg.Done()
-			
+
 			result, err := e.evaluateSingleVariant(ctx, prompt, targetModel, testSet, metric)
 			if err != nil {
 				errCh <- fmt.Errorf("variant %d: %w", idx, err)
@@ -97,20 +97,20 @@ func (e *Evaluator) EvaluateVariants(
 			results[idx] = result
 		}(i, variant)
 	}
-	
+
 	wg.Wait()
 	close(errCh)
-	
+
 	// Collect errors
 	var errs []error
 	for err := range errCh {
 		errs = append(errs, err)
 	}
-	
+
 	if len(errs) > 0 {
 		return results, fmt.Errorf("evaluation had %d errors: %v", len(errs), errs[0])
 	}
-	
+
 	return results, nil
 }
 
@@ -127,10 +127,10 @@ func (e *Evaluator) evaluateSingleVariant(
 		TargetModel:   targetModel,
 		TotalCases:    len(testSet),
 	}
-	
+
 	var totalLatency time.Duration
 	var totalTokens int
-	
+
 	for _, tc := range testSet {
 		output, latency, tokens, err := e.invoker.Invoke(ctx, targetModel, prompt, tc.Input)
 		if err != nil {
@@ -141,10 +141,10 @@ func (e *Evaluator) evaluateSingleVariant(
 			result.FailedCases++
 			continue
 		}
-		
+
 		totalLatency += latency
 		totalTokens += tokens
-		
+
 		// Evaluate based on metric
 		passed := e.evaluateOutput(output, tc.ExpectedOutput, metric)
 		if passed {
@@ -158,7 +158,7 @@ func (e *Evaluator) evaluateSingleVariant(
 			})
 		}
 	}
-	
+
 	// Calculate aggregate metrics
 	if result.TotalCases > 0 {
 		result.Accuracy = float64(result.PassedCases) / float64(result.TotalCases)
@@ -191,7 +191,7 @@ func (e *Evaluator) evaluateOutput(actual, expected string, metric EvaluationMet
 func containsString(haystack, needle string) bool {
 	return len(haystack) >= len(needle) &&
 		(haystack == needle ||
-		 len(needle) > 0 && findSubstring(haystack, needle))
+			len(needle) > 0 && findSubstring(haystack, needle))
 }
 
 func findSubstring(s, sub string) bool {
@@ -269,4 +269,3 @@ type RankedResult struct {
 	Score  float64           `json:"score"`
 	Rank   int               `json:"rank"`
 }
-

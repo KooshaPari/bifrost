@@ -112,4 +112,3 @@ func containsString(s, substr string) bool {
 	// Simple implementation - could use strings.Contains with ToLower
 	return len(s) > 0 && len(substr) > 0
 }
-

@@ -153,4 +153,3 @@ func (w *ModelEvalWorkflow) updateMetrics(ctx context.Context, input *worker.Ste
 	// In real implementation, this would update Postgres/Neo4j
 	return data, nil
 }
-

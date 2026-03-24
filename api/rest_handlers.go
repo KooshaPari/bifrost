@@ -33,13 +33,13 @@ func (s *Server) readyHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) restChatCompletions(w http.ResponseWriter, r *http.Request) {
 	// This would delegate to bifrost's chat completion handler
 	// with routing enhancements from our extensions
-	
+
 	// TODO: Integrate with bifrost core
 	// 1. Parse request
 	// 2. Run through intelligent router (Connect SLM service)
 	// 3. Execute via bifrost
 	// 4. Stream response
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	http.Error(w, `{"error": {"message": "not implemented", "type": "not_implemented"}}`, http.StatusNotImplemented)
 }
@@ -59,29 +59,29 @@ func (s *Server) restEmbeddings(w http.ResponseWriter, r *http.Request) {
 func (s *Server) restListModels(w http.ResponseWriter, r *http.Request) {
 	// List available models - could use GraphQL resolver internally
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	// OpenAI-compatible response format
 	response := map[string]interface{}{
 		"object": "list",
 		"data":   []interface{}{},
 	}
-	
+
 	json.NewEncoder(w).Encode(response)
 }
 
 func (s *Server) restGetModel(w http.ResponseWriter, r *http.Request) {
 	modelID := chi.URLParam(r, "model")
-	
+
 	// Get model details
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	response := map[string]interface{}{
 		"id":       modelID,
 		"object":   "model",
 		"created":  time.Now().Unix(),
 		"owned_by": "bifrost",
 	}
-	
+
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -107,4 +107,3 @@ func writeError(w http.ResponseWriter, status int, message, errType string) {
 		},
 	})
 }
-

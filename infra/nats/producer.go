@@ -94,4 +94,3 @@ func (c *Client) PublishMetricsSync(ctx context.Context, modelID string, metrics
 		Priority: -1, // low priority
 	})
 }
-

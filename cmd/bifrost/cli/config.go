@@ -76,4 +76,3 @@ func maskSecret(s string) string {
 	}
 	return s[:4] + "..." + s[len(s)-4:]
 }
-

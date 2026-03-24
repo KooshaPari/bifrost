@@ -16,11 +16,11 @@ type ServerConfig struct {
 
 // BifrostConfig represents configuration for bifrost core functionality.
 type BifrostConfig struct {
-	EnableCache    bool   `mapstructure:"enable_cache"`
-	CacheBackend   string `mapstructure:"cache_backend"`
-	Neo4jURL       string `mapstructure:"neo4j_url"`
-	NatsURL        string `mapstructure:"nats_url"`
-	RedisURL       string `mapstructure:"redis_url"`
+	EnableCache  bool   `mapstructure:"enable_cache"`
+	CacheBackend string `mapstructure:"cache_backend"`
+	Neo4jURL     string `mapstructure:"neo4j_url"`
+	NatsURL      string `mapstructure:"nats_url"`
+	RedisURL     string `mapstructure:"redis_url"`
 }
 
 // BifrostExtensionsConfig represents the complete configuration for bifrost-extensions.
@@ -36,15 +36,15 @@ func LoadConfig(filePath string) (*BifrostExtensionsConfig, error) {
 
 	// Set defaults for bifrost-extensions configuration
 	defaults := map[string]any{
-		"server.port":             8080,
-		"server.host":             "localhost",
-		"server.allowed_hosts":    []string{"localhost", "127.0.0.1", "[::1]"},
-		"server.allowed_origins":  []string{"*"},
-		"bifrost.enable_cache":    true,
-		"bifrost.cache_backend":   "redis",
-		"bifrost.neo4j_url":       "neo4j://localhost:7687",
-		"bifrost.nats_url":        "nats://localhost:4222",
-		"bifrost.redis_url":       "redis://localhost:6379",
+		"server.port":            8080,
+		"server.host":            "localhost",
+		"server.allowed_hosts":   []string{"localhost", "127.0.0.1", "[::1]"},
+		"server.allowed_origins": []string{"*"},
+		"bifrost.enable_cache":   true,
+		"bifrost.cache_backend":  "redis",
+		"bifrost.neo4j_url":      "neo4j://localhost:7687",
+		"bifrost.nats_url":       "nats://localhost:4222",
+		"bifrost.redis_url":      "redis://localhost:6379",
 	}
 
 	// Load configuration with defaults
@@ -92,15 +92,15 @@ func LoadConfigWithEnv(filePath string) (*BifrostExtensionsConfig, error) {
 // BindEnvVars binds specific environment variables to configuration keys.
 func BindEnvVars() error {
 	envBindings := map[string]string{
-		"server.port":             "BIFROST_PORT",
-		"server.host":             "BIFROST_HOST",
-		"server.allowed_hosts":    "BIFROST_ALLOWED_HOSTS",
-		"server.allowed_origins":  "BIFROST_ALLOWED_ORIGINS",
-		"bifrost.enable_cache":    "BIFROST_ENABLE_CACHE",
-		"bifrost.cache_backend":   "BIFROST_CACHE_BACKEND",
-		"bifrost.neo4j_url":       "BIFROST_NEO4J_URL",
-		"bifrost.nats_url":        "BIFROST_NATS_URL",
-		"bifrost.redis_url":       "BIFROST_REDIS_URL",
+		"server.port":            "BIFROST_PORT",
+		"server.host":            "BIFROST_HOST",
+		"server.allowed_hosts":   "BIFROST_ALLOWED_HOSTS",
+		"server.allowed_origins": "BIFROST_ALLOWED_ORIGINS",
+		"bifrost.enable_cache":   "BIFROST_ENABLE_CACHE",
+		"bifrost.cache_backend":  "BIFROST_CACHE_BACKEND",
+		"bifrost.neo4j_url":      "BIFROST_NEO4J_URL",
+		"bifrost.nats_url":       "BIFROST_NATS_URL",
+		"bifrost.redis_url":      "BIFROST_REDIS_URL",
 	}
 
 	for key, envVar := range envBindings {

@@ -230,4 +230,3 @@ func (c *WorkflowClient) ContextFoldingWorkflow(ctx context.Context, sessionID s
 		},
 	})
 }
-

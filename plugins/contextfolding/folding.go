@@ -167,4 +167,3 @@ func (cf *ContextFolding) adaptiveFold(
 	// TODO: Implement importance scoring
 	return cf.summarizeOld(ctx, messages, budget, "medium")
 }
-

@@ -124,4 +124,3 @@ func setupProviders(acct *account.EnhancedAccount) {
 		})
 	}
 }
-

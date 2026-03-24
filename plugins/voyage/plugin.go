@@ -16,22 +16,22 @@ import (
 )
 
 const (
-	ProviderKey       = "voyage"
-	DefaultBaseURL    = "https://api.voyageai.com/v1"
-	DefaultTimeout    = 30 * time.Second
+	ProviderKey    = "voyage"
+	DefaultBaseURL = "https://api.voyageai.com/v1"
+	DefaultTimeout = 30 * time.Second
 
 	// Embedding models
-	Voyage35       = "voyage-3.5"        // Best quality, 1024 dims, 32K context
-	Voyage35Lite   = "voyage-3.5-lite"   // Fast/cheap, 1024 dims, 32K context
-	Voyage3        = "voyage-3"          // General purpose
-	Voyage3Lite    = "voyage-3-lite"     // Fast general purpose
-	VoyageCode3    = "voyage-code-3"     // Code-optimized
+	Voyage35       = "voyage-3.5"          // Best quality, 1024 dims, 32K context
+	Voyage35Lite   = "voyage-3.5-lite"     // Fast/cheap, 1024 dims, 32K context
+	Voyage3        = "voyage-3"            // General purpose
+	Voyage3Lite    = "voyage-3-lite"       // Fast general purpose
+	VoyageCode3    = "voyage-code-3"       // Code-optimized
 	VoyageMulti3   = "voyage-multimodal-3" // Text + images
-	VoyageFinance2 = "voyage-finance-2"  // Financial domain
+	VoyageFinance2 = "voyage-finance-2"    // Financial domain
 
 	// Reranking models
-	Rerank2       = "rerank-2"           // High quality reranker
-	Rerank2Lite   = "rerank-2-lite"      // Fast reranker
+	Rerank2     = "rerank-2"      // High quality reranker
+	Rerank2Lite = "rerank-2-lite" // Fast reranker
 )
 
 // Config holds VoyageAI plugin configuration
@@ -122,12 +122,12 @@ func (p *VoyagePlugin) Cleanup() error {
 
 // VoyageEmbeddingRequest is the request format for VoyageAI embeddings
 type VoyageEmbeddingRequest struct {
-	Input          []string `json:"input"`
-	Model          string   `json:"model"`
-	InputType      string   `json:"input_type,omitempty"`      // query, document
-	Truncation     bool     `json:"truncation,omitempty"`
-	OutputDimension *int    `json:"output_dimension,omitempty"`
-	OutputDtype    string   `json:"output_dtype,omitempty"`    // float, int8, uint8, binary, ubinary
+	Input           []string `json:"input"`
+	Model           string   `json:"model"`
+	InputType       string   `json:"input_type,omitempty"` // query, document
+	Truncation      bool     `json:"truncation,omitempty"`
+	OutputDimension *int     `json:"output_dimension,omitempty"`
+	OutputDtype     string   `json:"output_dtype,omitempty"` // float, int8, uint8, binary, ubinary
 }
 
 // VoyageEmbeddingResponse is the response format from VoyageAI

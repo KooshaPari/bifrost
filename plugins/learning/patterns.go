@@ -331,4 +331,3 @@ func (kg *KnowledgeGraph) String() string {
 	defer kg.mu.RUnlock()
 	return fmt.Sprintf("nodes=%d, relationships=%d", len(kg.nodes), len(kg.relationships))
 }
-

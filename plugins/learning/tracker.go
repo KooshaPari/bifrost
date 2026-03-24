@@ -144,4 +144,3 @@ func (pt *PerformanceTracker) Clear() {
 	pt.metrics = make(map[uuid.UUID][]*PerformanceMetric)
 	pt.stats = make(map[uuid.UUID]*PerformanceStats)
 }
-

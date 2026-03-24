@@ -153,4 +153,3 @@ func (c *Consumer) StartBatch(ctx context.Context, batchSize int, handler func(c
 		}
 	}
 }
-

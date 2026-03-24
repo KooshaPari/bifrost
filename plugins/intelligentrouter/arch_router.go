@@ -106,4 +106,3 @@ func (c *ArchRouterClient) GetDomainModels(domain string) []string {
 	}
 	return domainModels["general"]
 }
-

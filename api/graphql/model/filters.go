@@ -21,14 +21,14 @@ type BenchmarkFilter struct {
 
 // RoutingFilter for filtering routing history queries
 type RoutingFilter struct {
-	SessionID  *string          `json:"sessionId,omitempty"`
-	UserID     *string          `json:"userId,omitempty"`
-	ProjectID  *string          `json:"projectId,omitempty"`
-	ModelID    *string          `json:"modelId,omitempty"`
-	TaskType   *string          `json:"taskType,omitempty"`
-	Success    *bool            `json:"success,omitempty"`
-	MinConfidence *float64      `json:"minConfidence,omitempty"`
-	DateRange  *DateRangeInput  `json:"dateRange,omitempty"`
+	SessionID     *string         `json:"sessionId,omitempty"`
+	UserID        *string         `json:"userId,omitempty"`
+	ProjectID     *string         `json:"projectId,omitempty"`
+	ModelID       *string         `json:"modelId,omitempty"`
+	TaskType      *string         `json:"taskType,omitempty"`
+	Success       *bool           `json:"success,omitempty"`
+	MinConfidence *float64        `json:"minConfidence,omitempty"`
+	DateRange     *DateRangeInput `json:"dateRange,omitempty"`
 }
 
 // PolicyFilter for filtering policy queries
@@ -57,4 +57,3 @@ type TimeRange struct {
 	Start time.Time `json:"start"`
 	End   time.Time `json:"end"`
 }
-

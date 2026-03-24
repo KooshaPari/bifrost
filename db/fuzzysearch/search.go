@@ -11,9 +11,9 @@ import (
 
 // SearchResult represents a fuzzy search match
 type SearchResult struct {
-	ID         string  `json:"id"`
-	Name       string  `json:"name"`
-	Similarity float64 `json:"similarity"`
+	ID         string         `json:"id"`
+	Name       string         `json:"name"`
+	Similarity float64        `json:"similarity"`
 	Extra      map[string]any `json:"extra,omitempty"`
 }
 
@@ -156,4 +156,3 @@ func collectResults(rows pgx.Rows) ([]SearchResult, error) {
 	}
 	return results, rows.Err()
 }
-

@@ -148,6 +148,20 @@ func (c *ClaudeOAuth) ExchangeCode(ctx context.Context, code string, pkce *PKCEC
 		RefreshToken string `json:"refresh_token"`
 		ExpiresIn    int    `json:"expires_in"`
 		Account      struct {
+			EmailAddress string `json:"email_address"`
+		} `json:"account"`
+	}
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		return nil, err
+	}
+
+	return &TokenData{
+		AccessToken:  tokenResp.AccessToken,
+		RefreshToken: tokenResp.RefreshToken,
+		ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
+		Email:        tokenResp.Account.EmailAddress,
+	}, nil
+}
 
 func (c *ClaudeOAuth) RefreshToken(ctx context.Context, refreshToken string) (*TokenData, error) {
 	reqBody := map[string]interface{}{
@@ -317,18 +331,3 @@ func (c *CodexOAuth) RefreshToken(ctx context.Context, refreshToken string) (*To
 func (c *CodexOAuth) GetAuthHeader(token *TokenData) string {
 	return "Bearer " + token.AccessToken
 }
-			EmailAddress string `json:"email_address"`
-		} `json:"account"`
-	}
-	if err := json.Unmarshal(body, &tokenResp); err != nil {
-		return nil, err
-	}
-
-	return &TokenData{
-		AccessToken:  tokenResp.AccessToken,
-		RefreshToken: tokenResp.RefreshToken,
-		ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
-		Email:        tokenResp.Account.EmailAddress,
-	}, nil
-}
-

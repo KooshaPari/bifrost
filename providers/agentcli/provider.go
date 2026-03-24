@@ -181,4 +181,3 @@ func (p *Provider) ChatCompletion(
 		},
 	}, nil
 }
-

@@ -29,9 +29,9 @@ type RerankResponse struct {
 
 // RerankResult represents a single reranking result
 type RerankResult struct {
-	Index           int     `json:"index"`
-	RelevanceScore  float64 `json:"relevance_score"`
-	Document        string  `json:"document,omitempty"`
+	Index          int     `json:"index"`
+	RelevanceScore float64 `json:"relevance_score"`
+	Document       string  `json:"document,omitempty"`
 }
 
 // Rerank performs a reranking request to VoyageAI
@@ -98,4 +98,3 @@ func (p *VoyagePlugin) RerankDocuments(ctx context.Context, query string, docume
 	}
 	return resp.Data, nil
 }
-

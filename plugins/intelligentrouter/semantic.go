@@ -201,4 +201,3 @@ func (ir *IntelligentRouter) calculateComplexity(features FeatureSet) float64 {
 	}
 	return score
 }
-

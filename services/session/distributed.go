@@ -151,4 +151,3 @@ func (mgr *DistributedManager) CreateSession(ctx context.Context, agentType stri
 
 	return session, nil
 }
-
