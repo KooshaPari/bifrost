@@ -147,7 +147,17 @@ func (c *ClaudeOAuth) ExchangeCode(ctx context.Context, code string, pkce *PKCEC
 		AccessToken  string `json:"access_token"`
 		RefreshToken string `json:"refresh_token"`
 		ExpiresIn    int    `json:"expires_in"`
-		Account      struct {
+	}
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		return nil, err
+	}
+
+	return &TokenData{
+		AccessToken:  tokenResp.AccessToken,
+		RefreshToken: tokenResp.RefreshToken,
+		ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
+	}, nil
+}
 
 func (c *ClaudeOAuth) RefreshToken(ctx context.Context, refreshToken string) (*TokenData, error) {
 	reqBody := map[string]interface{}{
@@ -232,11 +242,11 @@ func (c *CodexOAuth) GenerateAuthURL(state string, pkce *PKCECodes) (string, err
 
 func (c *CodexOAuth) ExchangeCode(ctx context.Context, code string, pkce *PKCECodes) (*TokenData, error) {
 	data := url.Values{
-		"code":          {code},
-		"grant_type":    {"authorization_code"},
 		"client_id":     {c.config.ClientID},
-		"redirect_uri":  {c.config.RedirectURI},
+		"code":          {code},
 		"code_verifier": {pkce.CodeVerifier},
+		"grant_type":    {"authorization_code"},
+		"redirect_uri":  {c.config.RedirectURI},
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", c.config.TokenURL, strings.NewReader(data.Encode()))
@@ -259,7 +269,6 @@ func (c *CodexOAuth) ExchangeCode(ctx context.Context, code string, pkce *PKCECo
 	var tokenResp struct {
 		AccessToken  string `json:"access_token"`
 		RefreshToken string `json:"refresh_token"`
-		IDToken      string `json:"id_token"`
 		ExpiresIn    int    `json:"expires_in"`
 	}
 	if err := json.Unmarshal(body, &tokenResp); err != nil {
@@ -269,15 +278,14 @@ func (c *CodexOAuth) ExchangeCode(ctx context.Context, code string, pkce *PKCECo
 	return &TokenData{
 		AccessToken:  tokenResp.AccessToken,
 		RefreshToken: tokenResp.RefreshToken,
-		IDToken:      tokenResp.IDToken,
 		ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
 	}, nil
 }
 
 func (c *CodexOAuth) RefreshToken(ctx context.Context, refreshToken string) (*TokenData, error) {
 	data := url.Values{
-		"grant_type":    {"refresh_token"},
 		"client_id":     {c.config.ClientID},
+		"grant_type":    {"refresh_token"},
 		"refresh_token": {refreshToken},
 	}
 
@@ -317,18 +325,58 @@ func (c *CodexOAuth) RefreshToken(ctx context.Context, refreshToken string) (*To
 func (c *CodexOAuth) GetAuthHeader(token *TokenData) string {
 	return "Bearer " + token.AccessToken
 }
-			EmailAddress string `json:"email_address"`
-		} `json:"account"`
+
+// OAuthManager manages OAuth tokens for multiple providers
+type OAuthManager struct {
+	providers map[string]OAuthProvider
+	mu        sync.RWMutex
+	cacheDir  string
+}
+
+// NewOAuthManager creates a new OAuthManager
+func NewOAuthManager(cacheDir string) *OAuthManager {
+	return &OAuthManager{
+		providers: make(map[string]OAuthProvider),
+		cacheDir:  cacheDir,
 	}
-	if err := json.Unmarshal(body, &tokenResp); err != nil {
+}
+
+// RegisterProvider registers an OAuth provider
+func (m *OAuthManager) RegisterProvider(provider OAuthProvider) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.providers[provider.GetName()] = provider
+}
+
+// LoadTokens loads cached tokens from disk
+func (m *OAuthManager) LoadTokens() (map[string]*TokenData, error) {
+	tokens := make(map[string]*TokenData)
+	tokenFile := filepath.Join(m.cacheDir, "oauth_tokens.json")
+
+	data, err := os.ReadFile(tokenFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return tokens, nil
+		}
 		return nil, err
 	}
 
-	return &TokenData{
-		AccessToken:  tokenResp.AccessToken,
-		RefreshToken: tokenResp.RefreshToken,
-		ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
-		Email:        tokenResp.Account.EmailAddress,
-	}, nil
+	if err := json.Unmarshal(data, &tokens); err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
 }
 
+// SaveTokens saves tokens to disk
+func (m *OAuthManager) SaveTokens(tokens map[string]*TokenData) error {
+	_ = os.MkdirAll(m.cacheDir, 0755)
+	tokenFile := filepath.Join(m.cacheDir, "oauth_tokens.json")
+
+	data, err := json.MarshalIndent(tokens, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(tokenFile, data, 0600)
+}

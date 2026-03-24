@@ -171,3 +171,50 @@ func (c *OpenRouterClient) doRequest(ctx context.Context, endpoint string, reqBo
 	return &result, nil
 }
 
+
+// doChatRequest handles chat completion requests
+func (c *OpenRouterClient) doChatRequest(ctx context.Context, endpoint string, reqBody ChatRequest) (*ChatResponse, error) {
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("marshal request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+endpoint, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+
+	c.setHeaders(req)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("do request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var result ChatResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// setHeaders sets common headers for API requests
+func (c *OpenRouterClient) setHeaders(req *http.Request) {
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	if c.appName != "" {
+		req.Header.Set("HTTP-Referer", c.appName)
+		req.Header.Set("X-Title", c.appName)
+	}
+}

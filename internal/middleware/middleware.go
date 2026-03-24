@@ -1,4 +1,4 @@
-// Package middleware provides HTTP middleware integration for bifrost-extensions using phenotype-go-kit.
+// Package middleware provides HTTP middleware integration for bifrost-extensions.
 package middleware
 
 import (
@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	gkitmiddleware "github.com/KooshaPari/phenotype-go-kit/pkg/middleware"
+	"github.com/go-chi/cors"
 )
 
-// ApplyDefaultStack applies the phenotype-go-kit middleware stack to a chi router.
-// This includes panic recovery, request logging, CORS, and request ID tracking.
+// ApplyDefaultStack applies the middleware stack to a chi router.
+// This includes CORS and basic request handling.
 //
 // Parameters:
 //   - router: The chi router to apply middleware to
@@ -18,10 +18,17 @@ import (
 // Returns:
 //   - error: An error if middleware setup fails
 func ApplyDefaultStack(router *chi.Mux) error {
-	return gkitmiddleware.DefaultMiddlewareStack(router)
+	// Apply CORS middleware
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		MaxAge:           300,
+	}))
+	return nil
 }
 
-// CORSOptions extends the phenotype-go-kit CORS configuration with bifrost-extensions-specific settings.
+// CORSOptions configures CORS with bifrost-extensions-specific settings.
 type CORSOptions struct {
 	AllowedOrigins []string
 	AllowedHosts   []string
@@ -33,29 +40,39 @@ type CORSOptions struct {
 //   - router: The chi router to apply middleware to
 //   - options: CORS configuration options
 func ApplyCustomCORS(router *chi.Mux, options CORSOptions) {
-	// The phenotype-go-kit middleware stack already includes CORS handling
-	// This function provides a hook for future customization
-	ApplyDefaultStack(router)
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   options.AllowedOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		MaxAge:           300,
+	}))
 }
 
-// HealthCheckRoute registers a health check endpoint using phenotype-go-kit's handler.
+// HealthCheckRoute registers a health check endpoint.
 //
 // Parameters:
 //   - router: The chi router to register the route on
 func HealthCheckRoute(router *chi.Mux) {
-	router.Get("/health", gkitmiddleware.HealthCheckHandler)
+	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
+	})
 }
 
-// ReadinessCheckRoute registers a readiness check endpoint using phenotype-go-kit's handler.
+// ReadinessCheckRoute registers a readiness check endpoint.
 //
 // Parameters:
 //   - router: The chi router to register the route on
 func ReadinessCheckRoute(router *chi.Mux) {
-	router.Get("/readiness", gkitmiddleware.ReadinessCheckHandler)
+	router.Get("/readiness", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"ready":true}`))
+	})
 }
 
-// RequestIDHandler is a helper that allows callers to extract or use request IDs
-// from the middleware applied by phenotype-go-kit.
+// RequestIDHandler is a helper that allows callers to use request timeouts.
 type RequestIDHandler struct {
 	timeout time.Duration
 }
@@ -73,7 +90,7 @@ func NewRequestIDHandler(timeout time.Duration) *RequestIDHandler {
 	}
 }
 
-// WrapHandler wraps a handler with timeout and other bifrost-extensions-specific middleware.
+// WrapHandler wraps a handler with timeout middleware.
 //
 // Parameters:
 //   - h: The handler to wrap

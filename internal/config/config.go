@@ -1,8 +1,7 @@
-// Package config provides configuration management for bifrost-extensions using phenotype-go-kit.
+// Package config provides configuration management for bifrost-extensions.
 package config
 
 import (
-	"github.com/KooshaPari/phenotype-go-kit/pkg/config"
 	"github.com/spf13/viper"
 )
 
@@ -30,9 +29,8 @@ type BifrostExtensionsConfig struct {
 }
 
 // LoadConfig loads the configuration from a file and environment variables.
-// It uses phenotype-go-kit's config loader for consistent configuration handling.
 func LoadConfig(filePath string) (*BifrostExtensionsConfig, error) {
-	loader := config.NewConfigLoader(filePath)
+	v := viper.New()
 
 	// Set defaults for bifrost-extensions configuration
 	defaults := map[string]any{
@@ -47,21 +45,27 @@ func LoadConfig(filePath string) (*BifrostExtensionsConfig, error) {
 		"bifrost.redis_url":       "redis://localhost:6379",
 	}
 
-	// Load configuration with defaults
-	if err := loader.LoadWithDefaults(defaults); err != nil {
-		// If file doesn't exist, continue with defaults from environment
-		viper.SetEnvPrefix("BIFROST")
-		viper.AutomaticEnv()
+	// Set all defaults in viper
+	for key, value := range defaults {
+		v.SetDefault(key, value)
+	}
 
-		// Set all defaults in viper
-		for key, value := range defaults {
-			viper.SetDefault(key, value)
+	// Load from file if provided
+	if filePath != "" {
+		v.SetConfigFile(filePath)
+		if err := v.ReadInConfig(); err != nil {
+			// If file doesn't exist, continue with defaults from environment
+			v.SetEnvPrefix("BIFROST")
+			v.AutomaticEnv()
 		}
+	} else {
+		v.SetEnvPrefix("BIFROST")
+		v.AutomaticEnv()
 	}
 
 	// Unmarshal into config struct
 	var cfg BifrostExtensionsConfig
-	if err := viper.Unmarshal(&cfg); err != nil {
+	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, err
 	}
 
@@ -78,11 +82,12 @@ func LoadConfigWithEnv(filePath string) (*BifrostExtensionsConfig, error) {
 	}
 
 	// Then override with environment variables
-	viper.SetEnvPrefix("BIFROST")
-	viper.AutomaticEnv()
+	v := viper.New()
+	v.SetEnvPrefix("BIFROST")
+	v.AutomaticEnv()
 
 	// Re-unmarshal with environment overrides
-	if err := viper.Unmarshal(cfg); err != nil {
+	if err := v.Unmarshal(cfg); err != nil {
 		return nil, err
 	}
 
