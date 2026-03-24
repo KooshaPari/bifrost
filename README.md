@@ -55,7 +55,7 @@ See [docs/architecture/PRINCIPLES.md](docs/architecture/PRINCIPLES.md) for detai
 ## Project Structure
 
 ```
-bifrost-extensions/
+bifrost-extensions-composite-actions/
 ├── README.md                 # This file
 ├── docs/                     # Documentation tree
 │   ├── README.md            # Main docs index
@@ -81,4 +81,3 @@ See [docs/guides/TESTING.md](docs/guides/TESTING.md) for testing procedures.
 ## License
 
 See LICENSE file for details.
-
