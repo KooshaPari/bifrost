@@ -92,10 +92,10 @@ require (
 // Development: use local paths until packages are published
 replace github.com/maximhq/bifrost/core => ../../bifrost/core
 
-replace github.com/coder/agentapi => ../../agentapi-plusplus
+replace github.com/coder/agentapi => ../agentapi-plusplus
 
-replace github.com/kooshapari/CLIProxyAPI/v7 => ../../CLIProxyAPI
+replace github.com/kooshapari/CLIProxyAPI/v7 => ../CLIProxyAPI
 
-replace github.com/KooshaPari/phenotype-go-middleware => ../../../template-commons/phenotype-go-middleware
+replace github.com/KooshaPari/phenotype-go-middleware => ../template-commons/phenotype-go-middleware
 
-replace github.com/KooshaPari/phenotype-go-config => ../../../template-commons/phenotype-go-config
+replace github.com/KooshaPari/phenotype-go-config => ../template-commons/phenotype-go-config
