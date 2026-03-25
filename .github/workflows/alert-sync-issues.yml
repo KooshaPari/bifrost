@@ -117,6 +117,11 @@ jobs:
                   core.warning(`Skipping unavailable endpoint: ${error.message}`);
                   return [];
                 }
+                // Also catch GitHubScript errors
+                if (error.message && error.message.includes('forbidden')) {
+                  core.warning(`API access forbidden: ${error.message}`);
+                  return [];
+                }
                 throw error;
               }
             };
@@ -254,12 +259,16 @@ jobs:
               }
             }
 
-            core.summary
-              .addHeading('Alert sync completed')
-              .addTable([
-                [{ data: 'Type', header: true }, { data: 'Open alerts found', header: true }],
-                ['CI failing workflows', String(desiredCiKeys.size)],
-                ['Dependabot alerts', String(desiredDepKeys.size)],
-                ['Code scanning alerts', String(desiredCodeQlKeys.size)],
-              ])
-              .write();
+            try {
+              core.summary
+                .addHeading('Alert sync completed')
+                .addTable([
+                  [{ data: 'Type', header: true }, { data: 'Open alerts found', header: true }],
+                  ['CI failing workflows', String(desiredCiKeys.size)],
+                  ['Dependabot alerts', String(desiredDepKeys.size)],
+                  ['Code scanning alerts', String(desiredCodeQlKeys.size)],
+                ])
+                .write();
+            } catch (e) {
+              core.info('Summary not available, skipping');
+            }
