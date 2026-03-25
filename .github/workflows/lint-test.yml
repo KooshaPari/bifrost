@@ -11,8 +11,26 @@ jobs:
   lint-test:
     name: lint-test
     runs-on: ubuntu-latest
+    env:
+      GOTOOLCHAIN: auto
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Checkout sibling dependencies (for replace directives)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # go.mod uses relative replace directives for local development.
+          # Clone the required sibling repos at the expected relative paths.
+          git clone --depth 1 https://github.com/maximhq/bifrost.git          ../../bifrost
+          git clone --depth 1 https://github.com/KooshaPari/agentapi-plusplus.git ../../agentapi-plusplus
+          git clone --depth 1 https://github.com/KooshaPari/cliproxyapi-plusplus.git ../../CLIProxyAPI
+          mkdir -p ../../template-commons
+          git clone --depth 1 --branch stabilize https://github.com/KooshaPari/phenotype-go-kit.git ../../template-commons/phenotype-go-kit
+
+          # Fix module paths to match what go.mod replace directives expect.
+          # cliproxyapi-plusplus declares a different module path than CLIProxyAPI/v7.
+          sed -i 's|^module .*|module github.com/kooshapari/CLIProxyAPI/v7|' ../../CLIProxyAPI/go.mod
 
       - uses: KooshaPari/phenotypeActions/actions/lint-test@main
