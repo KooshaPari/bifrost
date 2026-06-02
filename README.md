@@ -1,3 +1,6 @@
+> **Work state:** MAINTENANCE · **Progress:** `██████░░░░ 60%`
+> Vendored Go AI-gateway fork (maximhq/bifrost); routing-convergence candidate · updated 2026-06-02
+
 # Bifrost AI Gateway
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/maximhq/bifrost/core)](https://goreportcard.com/report/github.com/maximhq/bifrost/core)
