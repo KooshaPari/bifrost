@@ -2,20 +2,22 @@
 
 **Vendor policy:** [VENDOR_PIN.md](./VENDOR_PIN.md)  
 **Branch:** `feat/bifrost-local-delta`  
-**Submodule pin:** `f9cec7bb` (phenotype-gateway `third_party/bifrost`)
+**Submodule pin:** `677c1ae` (phenotype-gateway `third_party/bifrost` — bump from `f9cec7bb`)
 
-## Scope
+## Upstream baseline
 
-Port **Koosha-local changes only** — do not merge maximhq/bifrost feature-branch sprawl.
+| Field | Value |
+|-------|-------|
+| maximhq tag | `transports/v1.5.15` |
+| Vendor policy | See [VENDOR_PIN.md](./VENDOR_PIN.md) |
 
 ## Local delta inventory (initial)
 
 | Area | Status | Notes |
 |------|--------|-------|
-| phenotype-gateway parity | pending | Map bifrost features in GATEWAY_FEATURE_PARITY |
-| Authvault integration | pending | Cross-cutting auth via Rust crates git pin |
-| MCP / guardrails | upstream | Track vendor tag updates |
-| Koosha deploy hooks | TBD | Diff vs `maximhq/bifrost` tag when selected |
+| phenotype-gateway parity | in_progress | GATEWAY_FEATURE_PARITY + submodule pin |
+| docs/VENDOR_PIN.md | done | #5 — baseline tag `transports/v1.5.15` (H12) |
+| docs/LOCAL_DELTA.md | done | #6 scaffold; inventory updated H12 |
 
 ## Workflow
 
