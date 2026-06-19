@@ -208,3 +208,19 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
 )
+
+// Vendor-fork monorepo: smoke/CI builds must use in-tree core/framework/plugins
+// (transports references MCP OAuth fields present locally but not yet in published modules).
+replace (
+	github.com/maximhq/bifrost/core => ../core
+	github.com/maximhq/bifrost/framework => ../framework
+	github.com/maximhq/bifrost/plugins/compat => ../plugins/compat
+	github.com/maximhq/bifrost/plugins/governance => ../plugins/governance
+	github.com/maximhq/bifrost/plugins/logging => ../plugins/logging
+	github.com/maximhq/bifrost/plugins/maxim => ../plugins/maxim
+	github.com/maximhq/bifrost/plugins/mocker => ../plugins/mocker
+	github.com/maximhq/bifrost/plugins/otel => ../plugins/otel
+	github.com/maximhq/bifrost/plugins/prompts => ../plugins/prompts
+	github.com/maximhq/bifrost/plugins/semanticcache => ../plugins/semanticcache
+	github.com/maximhq/bifrost/plugins/telemetry => ../plugins/telemetry
+)
