@@ -7,5 +7,5 @@
 	"tabWidth": 2,
 	"trailingComma": "all",
 	"sortTailwindcss": true,
-	"ignorePatterns": ["out/**", "node_modules/**"]
+	"ignorePatterns": ["out/**", "node_modules/**", "app/tokens.css", "app/globals.css", "index.html"]
 }
