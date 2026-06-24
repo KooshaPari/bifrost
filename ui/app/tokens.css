@@ -1,0 +1,72 @@
+/* ============================================================================
+ * Phenotype — design system tokens
+ * ----------------------------------------------------------------------------
+ * Single source of truth for the Bifrost UI's design language.
+ * Imported by `globals.css` so every CSS custom property cascades through
+ * the app.
+ *
+ * Brand
+ *   • Primary:    teal #7ebab5 (9.0:1 contrast on midnight — passes
+ *                 WCAG-AA for normal text, AAA for large text)
+ *   • Background: midnight #090a0c (near-black, slight cool undertone)
+ *   • Foreground: off-white #ececec (~16:1 on midnight — AAA)
+ *
+ * Typography
+ *   • Sans:    Montserrat — UI body text, controls, labels
+ *   • Display: Bricolage Grotesque — headings, hero, marketing
+ *   • Mono:    JetBrains Mono — code, IDs, technical readouts
+ *
+ * Fonts are loaded from Google Fonts (preconnect in index.html) with
+ * `display=swap` (no FOIT). A system-ui fallback chain is appended to
+ * every family so first paint is never blocked and SSR/print degrade
+ * gracefully.
+ * ========================================================================== */
+
+/* ─── Design tokens (CSS custom properties) ───────────────────────────── */
+
+:root {
+	/* Color — raw palette */
+	--phenotype-primary: #7ebab5;          /* teal — 9.0:1 on midnight */
+	--phenotype-primary-strong: #5fa29d;   /* hover/active — 7.4:1 on midnight */
+	--phenotype-primary-soft: #9ad4cf;     /* highlight, tints — 11.7:1 on midnight */
+	--phenotype-midnight: #090a0c;         /* app background */
+	--phenotype-surface: #111317;          /* raised surface (cards) */
+	--phenotype-surface-elevated: #181b20; /* popovers, modals */
+	--phenotype-border: #232830;           /* hairlines, dividers */
+	--phenotype-border-strong: #2f3741;
+	--phenotype-foreground: #ececec;       /* primary text — 16:1 on midnight */
+	--phenotype-foreground-muted: #a8adb4; /* secondary text — 7.2:1 on midnight */
+	--phenotype-foreground-subtle: #7a8088;/* tertiary text — 4.6:1 on midnight */
+	--phenotype-danger: #e06464;           /* 5.7:1 on midnight */
+	--phenotype-warning: #e0a64e;          /* 8.1:1 on midnight */
+	--phenotype-success: #6fc77a;          /* 6.5:1 on midnight */
+	--phenotype-info: #6ea7e0;             /* 6.8:1 on midnight */
+
+	/* Typography — family stacks (Google Fonts → system fallbacks) */
+	--font-sans:
+		"Montserrat", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+		"Roboto", "Helvetica Neue", Arial, sans-serif;
+	--font-display:
+		"Bricolage Grotesque", "Montserrat", ui-sans-serif, system-ui,
+		-apple-system, "Segoe UI", "Roboto", sans-serif;
+	--font-mono:
+		"JetBrains Mono", ui-monospace, "SFMono-Regular", "Menlo", "Monaco",
+		"Consolas", "Liberation Mono", monospace;
+	--font-code:
+		"JetBrains Mono", ui-monospace, "SFMono-Regular", "Menlo", "Monaco",
+		"Consolas", monospace;
+
+	/* Spacing scale (4px base) — exposed for components that need it */
+	--phenotype-space-1: 0.25rem;
+	--phenotype-space-2: 0.5rem;
+	--phenotype-space-3: 0.75rem;
+	--phenotype-space-4: 1rem;
+	--phenotype-space-6: 1.5rem;
+	--phenotype-space-8: 2rem;
+
+	/* Radii */
+	--phenotype-radius-sm: 0.375rem;
+	--phenotype-radius-md: 0.5rem;
+	--phenotype-radius-lg: 0.75rem;
+	--phenotype-radius-xl: 1rem;
+}
