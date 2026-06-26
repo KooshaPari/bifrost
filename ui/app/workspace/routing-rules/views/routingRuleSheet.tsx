@@ -29,7 +29,8 @@ import {
 } from "@/lib/types/routingRules";
 import { validateRateLimitAndBudgetRules, validateRoutingRules } from "@/lib/utils/celConverterRouting";
 import { normalizeRoutingRuleGroupQuery } from "@/lib/utils/routingRuleGroupQuery";
-import { Plus, Save, Trash2, X } from "lucide-react";
+import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
+import { Plus, Trash2, X } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { RuleGroupType } from "react-querybuilder";
@@ -88,6 +89,9 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 
 	const isEditing = !!editingRule;
 	const isLoading = isCreating || isUpdating;
+	const canCreate = useRbac(RbacResource.RoutingRules, RbacOperation.Create);
+	const canUpdate = useRbac(RbacResource.RoutingRules, RbacOperation.Update);
+	const hasRequiredAccess = isEditing ? canUpdate : canCreate;
 	const enabled = watch("enabled");
 	const chainRule = watch("chain_rule");
 	const scope = watch("scope");
@@ -105,6 +109,11 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 			...rules.flatMap((r) => (r.fallbacks ?? []).map((f) => f.split("/")[0]?.trim()).filter(Boolean)),
 		]),
 	);
+	const providerOptions = availableProviders.map((prov) => ({
+		label: getProviderLabel(prov),
+		value: prov,
+		icon: <RenderProviderIcon provider={prov as ProviderIconType} size="sm" className="h-4 w-4" />,
+	}));
 
 	// Initialize form data when editing rule changes
 	useEffect(() => {
@@ -231,9 +240,9 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 		const submitPromise =
 			isEditing && editingRule
 				? updateRoutingRule({
-					id: editingRule.id,
-					data: payload,
-				}).unwrap()
+						id: editingRule.id,
+						data: payload,
+					}).unwrap()
 				: createRoutingRule(payload).unwrap();
 
 		submitPromise
@@ -269,8 +278,8 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 					</SheetDescription>
 				</SheetHeader>
 
-				<form onSubmit={handleSubmit(onSubmit)}>
-					<div className="flex flex-col gap-6 px-8 pb-6">
+				<form onSubmit={handleSubmit(onSubmit)} className="flex grow flex-col">
+					<div className="flex grow flex-col gap-6 px-8 pb-6">
 						{/* Rule Name */}
 						<div className="space-y-3">
 							<Label htmlFor="name">
@@ -397,10 +406,10 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 								{((scope === "team" && teamsData.teams.length === 0) ||
 									(scope === "customer" && customersData.customers.length === 0) ||
 									(scope === "virtual_key" && vksData.virtual_keys.length === 0)) && (
-										<p className="text-muted-foreground text-sm">
-											No {scope === "team" ? "teams" : scope === "customer" ? "customers" : "virtual keys"} available
-										</p>
-									)}
+									<p className="text-muted-foreground text-sm">
+										No {scope === "team" ? "teams" : scope === "customer" ? "customers" : "virtual keys"} available
+									</p>
+								)}
 								{errors.scope_id && <p className="text-destructive text-sm">{errors.scope_id.message}</p>}
 							</div>
 						)}
@@ -460,7 +469,7 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 										key={index}
 										target={target}
 										index={index}
-										availableProviders={availableProviders}
+										providerOptions={providerOptions}
 										allKeys={allKeysData}
 										showRemove={targets.length > 1}
 										onUpdate={updateTarget}
@@ -482,7 +491,8 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 						<div className="space-y-3">
 							<div className="flex items-center justify-between">
 								<div>
-									<Label>Fallbacks</Label>								<p className="text-muted-foreground text-xs mt-0.5">
+									<Label>Fallbacks</Label>{" "}
+									<p className="text-muted-foreground mt-0.5 text-xs">
 										Provider is required, but model is optional. Leave model empty to use the incoming request value.
 									</p>
 								</div>
@@ -531,21 +541,14 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 										return (
 											<div key={index} className="flex items-center gap-2">
 												<div className="flex-1">
-													<Select value={fbProvider} onValueChange={handleProviderChange}>
-														<SelectTrigger className="w-full">
-															<SelectValue placeholder="Select provider..." />
-														</SelectTrigger>
-														<SelectContent>
-															{availableProviders.map((prov) => (
-																<SelectItem key={prov} value={prov}>
-																	<div className="flex items-center gap-2">
-																		<RenderProviderIcon provider={prov as ProviderIconType} size="sm" className="h-4 w-4" />
-																		<span>{getProviderLabel(prov)}</span>
-																	</div>
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
+													<ComboboxSelect
+														options={providerOptions}
+														value={fbProvider || null}
+														onValueChange={(value) => handleProviderChange(value ?? "")}
+														placeholder="Select provider..."
+														className="h-9"
+														noPortal
+													/>
 												</div>
 												<div className="flex-1">
 													<ModelMultiselect
@@ -575,16 +578,13 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 							</div>
 							<p className="text-muted-foreground text-xs">Fallbacks will be used in the order they are defined</p>
 						</div>
-
 					</div>
 					{/* Action Buttons */}
 					<div className="bg-card sticky bottom-0 flex justify-end gap-3 border-t px-8 py-4">
 						<Button type="button" variant="outline" onClick={handleCancel} disabled={isLoading}>
-							<X className="h-4 w-4" />
 							Cancel
 						</Button>
-						<Button type="submit" disabled={isLoading}>
-							<Save className="h-4 w-4" />
+						<Button type="submit" disabled={isLoading || !hasRequiredAccess}>
 							{isEditing ? "Update Rule" : "Save Rule"}
 						</Button>
 					</div>
@@ -597,14 +597,14 @@ export function RoutingRuleSheet({ open, onOpenChange, editingRule, onSuccess }:
 interface TargetRowProps {
 	target: RoutingTargetFormData;
 	index: number;
-	availableProviders: string[];
+	providerOptions: Array<{ label: string; value: string; icon: React.ReactNode }>;
 	allKeys: Array<{ key_id: string; name: string; provider: string }>;
 	showRemove: boolean;
 	onUpdate: (index: number, field: keyof RoutingTargetFormData, value: string | number) => void;
 	onRemove: (index: number) => void;
 }
 
-function TargetRow({ target, index, availableProviders, allKeys, showRemove, onUpdate, onRemove }: TargetRowProps) {
+function TargetRow({ target, index, providerOptions, allKeys, showRemove, onUpdate, onRemove }: TargetRowProps) {
 	const availableKeys = target.provider
 		? allKeys.filter((k) => k.provider === target.provider).map((k) => ({ id: k.key_id, name: k.name }))
 		: [];
@@ -652,33 +652,19 @@ function TargetRow({ target, index, availableProviders, allKeys, showRemove, onU
 						Provider
 					</Label>
 					<div className="flex gap-1.5">
-						<Select
-							value={target.provider}
+						<ComboboxSelect
+							options={providerOptions}
+							value={target.provider || null}
 							onValueChange={(value) => {
-								onUpdate(index, "provider", value);
+								onUpdate(index, "provider", value ?? "");
 								onUpdate(index, "model", "");
 								onUpdate(index, "key_id", "");
 							}}
-						>
-							<SelectTrigger
-								id={`routing-target-${index}-provider-select`}
-								aria-labelledby={`routing-target-${index}-provider-label`}
-								className="h-9 flex-1 text-sm"
-								data-testid={`routing-target-${index}-provider-select`}
-							>
-								<SelectValue placeholder="Incoming (optional)" />
-							</SelectTrigger>
-							<SelectContent>
-								{availableProviders.map((prov) => (
-									<SelectItem key={prov} value={prov}>
-										<div className="flex items-center gap-2">
-											<RenderProviderIcon provider={prov as ProviderIconType} size="sm" className="h-4 w-4" />
-											<span>{getProviderLabel(prov)}</span>
-										</div>
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+							placeholder="Incoming (optional)"
+							className="h-9 flex-1 text-sm"
+							data-testid={`routing-target-${index}-provider-select`}
+							noPortal
+						/>
 						{target.provider && (
 							<Button
 								type="button"

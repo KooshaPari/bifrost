@@ -41,7 +41,7 @@ func NewFireworksProvider(config *schemas.ProviderConfig, logger schemas.Logger)
 
 	// Configure proxy and retry policy
 	client = providerUtils.ConfigureProxy(client, config.ProxyConfig, logger)
-	client = providerUtils.ConfigureDialer(client)
+	client = providerUtils.ConfigureDialer(client, config.NetworkConfig.AllowPrivateNetwork)
 	client = providerUtils.ConfigureTLS(client, config.NetworkConfig, logger)
 	streamingClient := providerUtils.BuildStreamingClient(client)
 	// Set default BaseURL if not provided
@@ -65,19 +65,28 @@ func (provider *FireworksProvider) GetProviderKey() schemas.ModelProvider {
 	return schemas.Fireworks
 }
 
-// ListModels performs a list models request to Fireworks AI's API.
+// ListModels lists models for Fireworks AI from each key's configured models and aliases.
+// Fireworks serverless has no usable OpenAI-style /v1/models endpoint (it returns
+// "Error listing deployed models"), so models are sourced from config rather than a live
+// API call, mirroring the Replicate non-deployment path.
 func (provider *FireworksProvider) ListModels(ctx *schemas.BifrostContext, keys []schemas.Key, request *schemas.BifrostListModelsRequest) (*schemas.BifrostListModelsResponse, *schemas.BifrostError) {
-	return openai.HandleOpenAIListModelsRequest(
-		ctx,
-		provider.client,
-		request,
-		provider.networkConfig.BaseURL+providerUtils.GetPathFromContext(ctx, "/v1/models"),
-		keys,
-		provider.networkConfig.ExtraHeaders,
+	return providerUtils.HandleMultipleListModelsRequests(ctx, keys, request, provider.listModelsByKey)
+}
+
+// listModelsByKey builds the model list for a single key from its configured models and
+// aliases, without calling the upstream API. The configured set is the full catalog we
+// can produce (Fireworks has no enumerable live endpoint), so the filtered pipeline path
+// is forced regardless of request.Unfiltered — the pipeline skips config backfill when
+// unfiltered (it assumes a live response supplies the catalog), which would otherwise
+// yield an empty list and drop configured models/aliases from the unfiltered catalog view.
+func (provider *FireworksProvider) listModelsByKey(_ *schemas.BifrostContext, key schemas.Key, _ *schemas.BifrostListModelsRequest) (*schemas.BifrostListModelsResponse, *schemas.BifrostError) {
+	return (&openai.OpenAIListModelsResponse{}).ToBifrostListModelsResponse(
 		schemas.Fireworks,
-		providerUtils.ShouldSendBackRawRequest(ctx, provider.sendBackRawRequest),
-		providerUtils.ShouldSendBackRawResponse(ctx, provider.sendBackRawResponse),
-	)
+		key.Models,
+		key.BlacklistedModels,
+		key.Aliases,
+		false,
+	), nil
 }
 
 
@@ -112,6 +121,7 @@ func (provider *FireworksProvider) TextCompletionStream(ctx *schemas.BifrostCont
 		request,
 		authHeader,
 		provider.networkConfig.ExtraHeaders,
+		provider.networkConfig.StreamIdleTimeoutInSeconds,
 		providerUtils.ShouldSendBackRawRequest(ctx, provider.sendBackRawRequest),
 		providerUtils.ShouldSendBackRawResponse(ctx, provider.sendBackRawResponse),
 		provider.GetProviderKey(),
@@ -159,6 +169,7 @@ func (provider *FireworksProvider) ChatCompletionStream(ctx *schemas.BifrostCont
 		request,
 		authHeader,
 		provider.networkConfig.ExtraHeaders,
+		provider.networkConfig.StreamIdleTimeoutInSeconds,
 		providerUtils.ShouldSendBackRawRequest(ctx, provider.sendBackRawRequest),
 		providerUtils.ShouldSendBackRawResponse(ctx, provider.sendBackRawResponse),
 		schemas.Fireworks,
@@ -204,6 +215,7 @@ func (provider *FireworksProvider) ResponsesStream(ctx *schemas.BifrostContext, 
 		request,
 		authHeader,
 		provider.networkConfig.ExtraHeaders,
+		provider.networkConfig.StreamIdleTimeoutInSeconds,
 		providerUtils.ShouldSendBackRawRequest(ctx, provider.sendBackRawRequest),
 		providerUtils.ShouldSendBackRawResponse(ctx, provider.sendBackRawResponse),
 		provider.GetProviderKey(),
@@ -377,6 +389,11 @@ func (provider *FireworksProvider) FileContent(_ *schemas.BifrostContext, _ []sc
 // CountTokens is not supported by the Fireworks AI provider.
 func (provider *FireworksProvider) CountTokens(_ *schemas.BifrostContext, _ schemas.Key, _ *schemas.BifrostResponsesRequest) (*schemas.BifrostCountTokensResponse, *schemas.BifrostError) {
 	return nil, providerUtils.NewUnsupportedOperationError(schemas.CountTokensRequest, provider.GetProviderKey())
+}
+
+// Compaction is not supported by the Fireworks AI provider.
+func (provider *FireworksProvider) Compaction(ctx *schemas.BifrostContext, key schemas.Key, request *schemas.BifrostCompactionRequest) (*schemas.BifrostCompactionResponse, *schemas.BifrostError) {
+	return nil, providerUtils.NewUnsupportedOperationError(schemas.CompactionRequest, provider.GetProviderKey())
 }
 
 // ContainerCreate is not supported by the Fireworks AI provider.

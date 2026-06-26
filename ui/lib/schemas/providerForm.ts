@@ -1,5 +1,5 @@
 import { KnownProvidersNames } from "@/lib/constants/logs";
-import { envVarSchema } from "@/lib/types/schemas";
+import { aliasConfigSchema, secretVarSchema } from "@/lib/types/schemas";
 import { isValidAliases, isValidVertexAuthCredentials } from "@/lib/utils/validation";
 import { z } from "zod";
 
@@ -38,7 +38,7 @@ const NetworkConfigSchema = z
 		retry_backoff_initial: z.number(),
 		retry_backoff_max: z.number(),
 		insecure_skip_verify: z.boolean().optional(),
-		ca_cert_pem: z.union([z.string(), envVarSchema]).optional(),
+		ca_cert_pem: z.union([z.string(), secretVarSchema]).optional(),
 		stream_idle_timeout_in_seconds: z.number().int().min(5).max(3600).optional(),
 		max_conns_per_host: z.number().int().min(1).max(10000).optional(),
 		enforce_http2: z.boolean().optional(),
@@ -74,7 +74,6 @@ const AllowedRequestsSchema = z.object({
 // Key configuration schemas
 const AzureKeyConfigSchema = z.object({
 	endpoint: z.string().min(1, "Endpoint is required for Azure keys"),
-	api_version: z.string().optional(),
 	client_id: z.string().optional(),
 	client_secret: z.string().optional(),
 	tenant_id: z.string().optional(),
@@ -152,9 +151,9 @@ const KeySchema = z.object({
 	models: z.array(z.string()),
 	weight: z.number().min(0.1, "Key weights must be between 0.1 and 1").max(1, "Key weights must be between 0.1 and 1"),
 	aliases: z
-		.union([z.record(z.string(), z.string()), z.string()])
+		.record(z.string(), aliasConfigSchema)
 		.optional()
-		.refine((value) => !value || isValidAliases(value), { message: "Aliases must be a valid JSON object" }),
+		.refine((value) => !value || isValidAliases(value), { message: "Deployments must have a Model ID set on every row" }),
 	azure_key_config: AzureKeyConfigSchema.optional(),
 	vertex_key_config: VertexKeyConfigSchema.optional(),
 	bedrock_key_config: BedrockKeyConfigSchema.optional(),

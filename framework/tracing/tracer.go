@@ -18,12 +18,13 @@ import (
 // framework's TraceStore implementation.
 // It also embeds a streaming.Accumulator for centralized streaming chunk accumulation.
 type Tracer struct {
-	store          *TraceStore
-	accumulator    *streaming.Accumulator
-	pricingManager *modelcatalog.ModelCatalog
-	logger         schemas.Logger
-	obsPlugins     atomic.Pointer[[]schemas.ObservabilityPlugin]
-	flushWG        sync.WaitGroup
+	store              *TraceStore
+	accumulator        *streaming.Accumulator
+	pricingManager     *modelcatalog.ModelCatalog
+	logger             schemas.Logger
+	obsPlugins         atomic.Pointer[[]schemas.ObservabilityPlugin]
+	cachedHdrPatterns  atomic.Pointer[[]string]
+	flushWG            sync.WaitGroup
 }
 
 // NewTracer creates a new Tracer wrapping the given TraceStore.
@@ -40,11 +41,73 @@ func NewTracer(store *TraceStore, pricingManager *modelcatalog.ModelCatalog, log
 }
 
 // SetObservabilityPlugins updates the plugins that receive completed traces.
+// It also precomputes the deduplicated, normalized union of request-header patterns
+// requested by those plugins so the per-request capture path is a single atomic load.
 func (t *Tracer) SetObservabilityPlugins(obsPlugins []schemas.ObservabilityPlugin) {
 	if t == nil {
 		return
 	}
 	t.obsPlugins.Store(&obsPlugins)
+
+	seen := make(map[string]struct{})
+	var patterns []string
+	for _, plugin := range obsPlugins {
+		if w, ok := plugin.(interface{ RequestHeaderPatterns() []string }); ok {
+			for _, p := range w.RequestHeaderPatterns() {
+				normalized := strings.ToLower(strings.TrimSpace(p))
+				if normalized == "" {
+					continue
+				}
+				if _, exists := seen[normalized]; !exists {
+					seen[normalized] = struct{}{}
+					patterns = append(patterns, normalized)
+				}
+			}
+		}
+	}
+	t.cachedHdrPatterns.Store(&patterns)
+}
+
+// ShouldCaptureRequestHeaders reports whether any observability plugin has opted into
+// request-header capture (by implementing RequestHeaderPatterns). Derived from the cached
+// pattern union computed in SetObservabilityPlugins, so there is no per-request recompute.
+func (t *Tracer) ShouldCaptureRequestHeaders() bool {
+	cached := t.cachedHdrPatterns.Load()
+	return cached != nil && len(*cached) > 0
+}
+
+// CollectRequestHeaderPatterns returns the deduplicated union of header patterns
+// requested by all observability plugins. The middleware uses this to capture only
+// matched headers onto the trace, keeping the trace lean. The union is precomputed in
+// SetObservabilityPlugins; this is a single atomic load.
+func (t *Tracer) CollectRequestHeaderPatterns() []string {
+	cached := t.cachedHdrPatterns.Load()
+	if cached == nil {
+		return nil
+	}
+	return *cached
+}
+
+// SetTraceRequestHeaders filters the given request headers down to the union of
+// patterns requested by observability plugins and stores the matched subset on the
+// trace. Header keys are expected to be lowercased by the caller.
+func (t *Tracer) SetTraceRequestHeaders(traceID string, headers map[string]string) {
+	if len(headers) == 0 {
+		return
+	}
+	patterns := t.CollectRequestHeaderPatterns()
+	matched := schemas.FilterHeaders(headers, patterns)
+	if len(matched) == 0 {
+		return
+	}
+	t.store.SetRequestHeaders(traceID, matched)
+}
+
+// SetTraceAttribute sets a trace-level attribute. Trace attributes are never
+// exported as OTEL/Datadog span attributes; observability connectors read them
+// directly off the completed trace.
+func (t *Tracer) SetTraceAttribute(traceID string, key string, value any) {
+	t.store.SetTraceAttribute(traceID, key, value)
 }
 
 // CreateTrace creates a new trace with optional parent ID and returns the trace ID.
@@ -139,6 +202,28 @@ func (t *Tracer) SetAttribute(handle schemas.SpanHandle, key string, value any) 
 	}
 }
 
+// GetSpanHandleByID retrieves a span handle for the given trace and span ID.
+// If spanID is nil, it returns a handle for the trace's root span.
+func (t *Tracer) GetSpanHandleByID(traceID string, spanID *string) schemas.SpanHandle {
+	if traceID == "" {
+		return nil
+	}
+	trace := t.store.GetTrace(traceID)
+	if trace == nil {
+		return nil
+	}
+	if spanID == nil {
+		if trace.RootSpan == nil {
+			return nil
+		}
+		return &spanHandle{traceID: traceID, spanID: trace.RootSpan.SpanID}
+	}
+	if *spanID == "" || trace.GetSpan(*spanID) == nil {
+		return nil
+	}
+	return &spanHandle{traceID: traceID, spanID: *spanID}
+}
+
 // AddEvent adds a timestamped event to the span identified by the handle.
 func (t *Tracer) AddEvent(handle schemas.SpanHandle, name string, attrs map[string]any) {
 	h, ok := handle.(*spanHandle)
@@ -226,7 +311,9 @@ func (t *Tracer) PopulateLLMResponseAttributes(ctx *schemas.BifrostContext, hand
 	respAttrs := PopulateResponseAttributes(resp)
 	for k, v := range respAttrs {
 		if k == schemas.AttrFinishReasons {
-			// llm.call span gets the singular finish_reason (first element only)
+			// Spec: gen_ai.response.finish_reasons (string[]) belongs on the GenAI (llm.call) span.
+			span.SetAttribute(schemas.AttrFinishReasons, v)
+			// legacy: also expose the singular scalar finish_reason (first element) for back-compat.
 			if reasons, ok := v.([]string); ok && len(reasons) > 0 {
 				span.SetAttribute(schemas.AttrFinishReason, reasons[0])
 			}
@@ -341,6 +428,102 @@ func (t *Tracer) CreateStreamAccumulator(traceID string, startTime time.Time) {
 	t.accumulator.CreateStreamAccumulator(traceID, startTime)
 }
 
+// PauseStream marks the active streaming response identified by traceID as paused.
+// While paused, post-processed chunks are buffered (not delivered to the client) but
+// PostLLMHooks continue to fire. Idempotent. No-op if no accumulator is associated.
+func (t *Tracer) PauseStream(traceID string) {
+	if traceID == "" || t.accumulator == nil {
+		return
+	}
+	t.accumulator.PauseStream(traceID)
+}
+
+// ResumeStream resumes a previously paused stream. Buffered chunks are flushed to
+// the client in order, then live streaming continues. Idempotent.
+func (t *Tracer) ResumeStream(traceID string) {
+	if traceID == "" || t.accumulator == nil {
+		return
+	}
+	t.accumulator.ResumeStream(traceID)
+}
+
+// EndStream terminates the streaming response. Any buffered chunks are flushed
+// first; if err is non-nil it is then delivered as a terminal error chunk. After
+// EndStream, all further provider chunks are dropped (PostLLMHook still fires).
+func (t *Tracer) EndStream(traceID string, err *schemas.BifrostError) {
+	if traceID == "" || t.accumulator == nil {
+		return
+	}
+	t.accumulator.EndStream(traceID, err)
+}
+
+// WaitForFlusher blocks until the gate flusher for traceID has finished
+// delivering buffered chunks (or aborted via ctx cancellation). Used by
+// provider close paths to coordinate with paused streams. See
+// schemas.Tracer.WaitForFlusher for full semantics.
+func (t *Tracer) WaitForFlusher(traceID string) {
+	if traceID == "" || t.accumulator == nil {
+		return
+	}
+	t.accumulator.WaitForFlusher(traceID)
+}
+
+// IsStreamEnded reports whether the gate for traceID is in the Ended state.
+// See schemas.Tracer.IsStreamEnded for full semantics.
+func (t *Tracer) IsStreamEnded(traceID string) bool {
+	if traceID == "" || t.accumulator == nil {
+		return false
+	}
+	return t.accumulator.IsStreamEnded(traceID)
+}
+
+// IsStreamPaused reports whether the gate for traceID is currently Paused.
+// See schemas.Tracer.IsStreamPaused for full semantics.
+func (t *Tracer) IsStreamPaused(traceID string) bool {
+	if traceID == "" || t.accumulator == nil {
+		return false
+	}
+	return t.accumulator.IsStreamPaused(traceID)
+}
+
+// GetAccumulatedResponse returns a snapshot BifrostResponse built on demand
+// from the accumulator's current chunks. See schemas.Tracer.GetAccumulatedResponse
+// for full semantics.
+func (t *Tracer) GetAccumulatedResponse(traceID string) *schemas.BifrostResponse {
+	if traceID == "" || t.accumulator == nil {
+		return nil
+	}
+	return t.accumulator.GetAccumulatedResponse(traceID)
+}
+
+// GateSend delivers a stream chunk through the pause/resume/end gate. Replaces
+// direct channel sends in provider helpers so plugin-driven pause/resume can
+// take effect. See schemas.Tracer.GateSend for full semantics.
+func (t *Tracer) GateSend(traceID string, chunk *schemas.BifrostStreamChunk, isFinal, isHardErr bool, ch chan *schemas.BifrostStreamChunk, ctx *schemas.BifrostContext) (ok bool) {
+	if t.accumulator == nil || traceID == "" {
+		// Fallback to direct send when no accumulator is wired (defensive).
+		// Recover from "send on closed channel" so a closed consumer cannot
+		// crash the provider goroutine — matches NoOpTracer.GateSend and
+		// GateSendChunk's non-gated fast path.
+		defer func() {
+			if recover() != nil {
+				ok = false
+			}
+		}()
+		if ctx == nil {
+			ch <- chunk
+			return true
+		}
+		select {
+		case ch <- chunk:
+			return true
+		case <-ctx.Done():
+			return false
+		}
+	}
+	return t.accumulator.GateSend(traceID, chunk, isFinal, isHardErr, ch, ctx)
+}
+
 // CleanupStreamAccumulator removes the stream accumulator for the given trace ID.
 // This should be called after the streaming request is complete.
 func (t *Tracer) CleanupStreamAccumulator(traceID string) {
@@ -357,11 +540,24 @@ func (t *Tracer) CleanupStreamAccumulator(traceID string) {
 	}
 }
 
+// ForceCleanupStreamAccumulator reaps the stream accumulator for the given trace
+// ID regardless of its reference counter. It is the guaranteed end-of-stream
+// backstop, called from the transport's trace completer once the stream has fully
+// drained, so an aborted or otherwise non-cleanly-terminated stream (or a
+// multi-plugin refcount imbalance) cannot leak its accumulator.
+func (t *Tracer) ForceCleanupStreamAccumulator(traceID string) {
+	if traceID == "" || t.accumulator == nil {
+		return
+	}
+	t.accumulator.ForceCleanupStreamAccumulator(traceID)
+}
+
 // ProcessStreamingChunk processes a streaming chunk and accumulates it.
-// Returns the accumulated result. IsFinal will be true when the stream is complete.
+// Returns the accumulated result when isFinalChunk is true and the stream is complete;
+// returns nil for non-final chunks.
 // This method is used by plugins to access accumulated streaming data.
-// The ctx parameter must contain the stream end indicator for proper final chunk detection.
-func (t *Tracer) ProcessStreamingChunk(traceID string, isFinalChunk bool, result *schemas.BifrostResponse, err *schemas.BifrostError) *schemas.StreamAccumulatorResult {
+// Set isFinalChunk to indicate whether the current chunk is the last in the stream.
+func (t *Tracer) ProcessStreamingChunk(ctx *schemas.BifrostContext, traceID string, isFinalChunk bool, result *schemas.BifrostResponse, err *schemas.BifrostError) *schemas.StreamAccumulatorResult {
 	if traceID == "" || t.accumulator == nil {
 		return nil
 	}
@@ -370,6 +566,12 @@ func (t *Tracer) ProcessStreamingChunk(traceID string, isFinalChunk bool, result
 	accumCtx := schemas.NewBifrostContext(context.Background(), time.Time{})
 	accumCtx.SetValue(schemas.BifrostContextKeyAccumulatorID, traceID)
 	accumCtx.SetValue(schemas.BifrostContextKeyStreamEndIndicator, isFinalChunk)
+
+	// Forward relevant context values to the new context
+	if ctx != nil {
+		accumCtx.SetValue(schemas.BifrostContextKeySelectedKeyID, ctx.Value(schemas.BifrostContextKeySelectedKeyID))
+		accumCtx.SetValue(schemas.BifrostContextKeyGovernanceVirtualKeyID, ctx.Value(schemas.BifrostContextKeyGovernanceVirtualKeyID))
+	}
 
 	processedResp, processErr := t.accumulator.ProcessStreamingResponse(accumCtx, result, err)
 	if processErr != nil || processedResp == nil {

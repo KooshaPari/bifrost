@@ -31,6 +31,57 @@ interface Props {
 	isKeyless?: boolean;
 }
 
+function ProviderKeyActionsMenu({
+	keyId,
+	hasUpdateAccess,
+	hasDeleteAccess,
+	onEdit,
+	onDelete,
+}: {
+	keyId: string;
+	hasUpdateAccess: boolean;
+	hasDeleteAccess: boolean;
+	onEdit: (keyId: string) => void;
+	onDelete: (keyId: string) => void;
+}) {
+	const [isOpen, setIsOpen] = useState(false);
+
+	return (
+		<DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+			<DropdownMenuTrigger asChild>
+				<Button onClick={(e) => e.stopPropagation()} variant="ghost">
+					<EllipsisIcon className="h-5 w-5" />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end">
+				<DropdownMenuItem
+					onSelect={(e) => {
+						e.preventDefault();
+						onEdit(keyId);
+						setIsOpen(false);
+					}}
+					disabled={!hasUpdateAccess}
+				>
+					<PencilIcon className="mr-1 h-4 w-4" />
+					Edit
+				</DropdownMenuItem>
+				<DropdownMenuItem
+					variant="destructive"
+					onSelect={(e) => {
+						e.preventDefault();
+						onDelete(keyId);
+						setIsOpen(false);
+					}}
+					disabled={!hasDeleteAccess}
+				>
+					<TrashIcon className="mr-1 h-4 w-4" />
+					Delete
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
 export default function ModelProviderKeysTableView({ provider, className, headerActions, isKeyless }: Props) {
 	const providerName = provider.name?.toLowerCase() ?? "";
 	const isVLLM = providerName === "vllm";
@@ -106,7 +157,7 @@ export default function ModelProviderKeysTableView({ provider, className, header
 					<div className="flex items-center gap-2">Configured {entityLabelPlural}</div>
 					<div className="flex items-center gap-2">
 						{headerActions}
-						{!isKeyless && (
+						{!isKeyless && hasUpdateProviderAccess ? (
 							<Button
 								disabled={!hasUpdateProviderAccess}
 								data-testid="add-key-btn"
@@ -117,7 +168,7 @@ export default function ModelProviderKeysTableView({ provider, className, header
 								<PlusIcon className="h-4 w-4" />
 								Add new {entityLabel}
 							</Button>
-						)}
+						) : null}
 					</div>
 				</CardTitle>
 			</CardHeader>
@@ -128,7 +179,13 @@ export default function ModelProviderKeysTableView({ provider, className, header
 				</div>
 			) : (
 				<div className="flex w-full flex-col gap-2 rounded-sm border">
-					<Table className="w-full" data-testid="keys-table">
+					<Table className="w-full table-fixed" data-testid="keys-table">
+						<colgroup>
+							<col className="w-[64%]" />
+							<col className="w-[12%]" />
+							<col className="w-[12%]" />
+							<col className="w-[12%]" />
+						</colgroup>
 						<TableHeader className="w-full">
 							<TableRow>
 								<TableHead>{isVLLM ? "Model" : isOllamaOrSGL ? "Server" : "API Key"}</TableHead>
@@ -154,8 +211,8 @@ export default function ModelProviderKeysTableView({ provider, className, header
 										className="text-sm transition-colors hover:bg-white"
 										onClick={() => {}}
 									>
-										<TableCell>
-											<div className="flex items-center space-x-2">
+										<TableCell className="overflow-hidden">
+											<div className="flex min-w-0 items-center space-x-2">
 												{key.status === "success" && (
 													<Tooltip>
 														<TooltipTrigger asChild>
@@ -174,22 +231,22 @@ export default function ModelProviderKeysTableView({ provider, className, header
 												{key.status === "list_models_failed" &&
 													(() => {
 														// Check if the failure might be due to an env var that the server couldn't resolve
-														const hasEnvVarConfig =
-															key.azure_key_config?.endpoint?.from_env ||
-															key.vertex_key_config?.project_id?.from_env ||
-															key.vertex_key_config?.region?.from_env ||
-															key.bedrock_key_config?.region?.from_env ||
-															key.vllm_key_config?.url?.from_env ||
-															key.value?.from_env;
+														const hasSecretVarConfig =
+															(key.azure_key_config?.endpoint?.type && key.azure_key_config.endpoint.type !== "plain_text") ||
+															(key.vertex_key_config?.project_id?.type && key.vertex_key_config.project_id.type !== "plain_text") ||
+															(key.vertex_key_config?.region?.type && key.vertex_key_config.region.type !== "plain_text") ||
+															(key.bedrock_key_config?.region?.type && key.bedrock_key_config.region.type !== "plain_text") ||
+															(key.vllm_key_config?.url?.type && key.vllm_key_config.url.type !== "plain_text") ||
+															(key.value?.type && key.value.type !== "plain_text");
 														const isEnvResolutionError =
-															hasEnvVarConfig && key.description && /not set|empty|missing/i.test(key.description);
+															hasSecretVarConfig && key.description && /not set|empty|missing/i.test(key.description);
 
 														return isEnvResolutionError ? (
 															<Tooltip>
 																<TooltipTrigger asChild>
 																	<button
 																		type="button"
-																		aria-label="Key status: env var may not be resolved"
+																		aria-label="Key status: secret reference may not be resolved"
 																		data-testid={`key-status-warning-${key.name}`}
 																		className="inline-flex"
 																	>
@@ -197,7 +254,7 @@ export default function ModelProviderKeysTableView({ provider, className, header
 																	</button>
 																</TooltipTrigger>
 																<TooltipContent className="max-w-xs break-words">
-																	{key.description} — verify the environment variable is set on the server
+																	{key.description} — verify the secret reference is configured on the server
 																</TooltipContent>
 															</Tooltip>
 														) : (
@@ -218,7 +275,7 @@ export default function ModelProviderKeysTableView({ provider, className, header
 															</Tooltip>
 														);
 													})()}
-												<span className="font-mono text-sm">{key.name}</span>
+												<span className="truncate font-mono text-sm">{key.name}</span>
 											</div>
 										</TableCell>
 										<TableCell data-testid="key-weight-value">
@@ -258,34 +315,15 @@ export default function ModelProviderKeysTableView({ provider, className, header
 										</TableCell>
 										<TableCell className="text-right">
 											<div className="flex items-center justify-end space-x-2">
-												<DropdownMenu>
-													<DropdownMenuTrigger asChild>
-														<Button onClick={(e) => e.stopPropagation()} variant="ghost">
-															<EllipsisIcon className="h-5 w-5" />
-														</Button>
-													</DropdownMenuTrigger>
-													<DropdownMenuContent align="end">
-														<DropdownMenuItem
-															onClick={() => {
-																setShowAddNewKeyDialog({ show: true, keyId: key.id });
-															}}
-															disabled={!hasUpdateProviderAccess}
-														>
-															<PencilIcon className="mr-1 h-4 w-4" />
-															Edit
-														</DropdownMenuItem>
-														<DropdownMenuItem
-															variant="destructive"
-															onClick={() => {
-																setShowDeleteKeyDialog({ show: true, keyId: key.id });
-															}}
-															disabled={!hasDeleteProviderAccess}
-														>
-															<TrashIcon className="mr-1 h-4 w-4" />
-															Delete
-														</DropdownMenuItem>
-													</DropdownMenuContent>
-												</DropdownMenu>
+												{hasUpdateProviderAccess || hasDeleteProviderAccess ? (
+													<ProviderKeyActionsMenu
+														keyId={key.id}
+														hasUpdateAccess={hasUpdateProviderAccess}
+														hasDeleteAccess={hasDeleteProviderAccess}
+														onEdit={(keyId) => setShowAddNewKeyDialog({ show: true, keyId })}
+														onDelete={(keyId) => setShowDeleteKeyDialog({ show: true, keyId })}
+													/>
+												) : null}
 											</div>
 										</TableCell>
 									</TableRow>

@@ -41,6 +41,7 @@ import {
 	useGetAllKeysQuery,
 	useGetMCPClientsQuery,
 	useGetProvidersQuery,
+	useRotateVirtualKeyMutation,
 	useUpdateVirtualKeyMutation,
 } from "@/lib/store";
 import { KnownProvider } from "@/lib/types/config";
@@ -59,8 +60,8 @@ interface VirtualKeySheetProps {
 	virtualKey?: VirtualKey | null;
 	teams: Team[];
 	customers: Customer[];
-	// When set and not editing, the new VK is created owned by this team and the sheet locks
-	// all fields except name/description (same treatment as access-profile-managed keys).
+	// When set, the new VK is created under this team. The entity assignment is pre-set
+	// and cannot be changed (but all other fields remain editable).
 	defaultTeamId?: string;
 	onSave: () => void;
 	onCancel: () => void;
@@ -72,11 +73,13 @@ const providerConfigSchema = z.object({
 	provider: z.string().min(1, "Provider is required"),
 	weight: z.number().min(0, "Weight must be at least 0").max(1, "Weight must be at most 1").optional(),
 	allowed_models: z.array(z.string()).optional(),
+	blacklisted_models: z.array(z.string()).optional(),
 	key_ids: z.array(z.string()).optional(), // Keys associated with this provider config
 	// Provider-level budget
 	budgets: z
 		.array(
 			z.object({
+				id: z.string().optional(),
 				max_limit: z.number().nonnegative().optional(),
 				reset_duration: z.string().optional(),
 			}),
@@ -115,6 +118,7 @@ const formSchema = z
 		budgets: z
 			.array(
 				z.object({
+					id: z.string().optional(),
 					max_limit: z.number().nonnegative().optional(),
 					reset_duration: z.string(),
 				}),
@@ -146,6 +150,12 @@ const formSchema = z
 	);
 
 type FormData = z.infer<typeof formSchema>;
+type BudgetComparisonEntry = {
+	id?: string;
+	max_limit?: number;
+	reset_duration?: string;
+	current_usage?: number;
+};
 
 type VirtualKeyType = {
 	label: string;
@@ -167,12 +177,11 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 	// of assignees — directly-attached users don't imply an access-profile relation.
 	const { assignedUsers, isManagedByProfile: isManagedByProfileHook } = useVirtualKeyUsage(virtualKey);
 	const isManagedByProfile = isEditing && isManagedByProfileHook;
-	// Team attachment: when a VK already belongs to a team (edit) or will be created for one
-	// (create from team detail sheet via defaultTeamId), the team assignment is fixed — users
-	// can still edit providers/budgets/rate limits/MCP, but not reparent the VK.
+	// Team attachment: when creating from a team context (defaultTeamId provided), the entity
+	// assignment is pre-set and locked. When editing an existing VK the assignment can be changed.
 	const attachedTeamId = isEditing ? virtualKey?.team_id || "" : defaultTeamId || "";
 	const attachedTeam = attachedTeamId ? teams.find((t) => t.id === attachedTeamId) : undefined;
-	const isTeamLocked = !!attachedTeamId;
+	const isTeamLocked = !isEditing && !!defaultTeamId;
 
 	const handleClose = () => {
 		setIsOpen(false);
@@ -186,9 +195,10 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 	const { data: keysData, error: keysError } = useGetAllKeysQuery();
 	const [createVirtualKey, { isLoading: isCreating }] = useCreateVirtualKeyMutation();
 	const [updateVirtualKey, { isLoading: isUpdating }] = useUpdateVirtualKeyMutation();
+	const [rotateVirtualKey, { isLoading: isRotating }] = useRotateVirtualKeyMutation();
 	const { data: mcpClientsResponse, error: mcpClientsError } = useGetMCPClientsQuery();
 	const mcpClientsData = mcpClientsResponse?.clients || [];
-	const isLoading = isCreating || isUpdating;
+	const isLoading = isCreating || isUpdating || isRotating;
 
 	const availableKeys = keysData || [];
 	const availableProviders = providersData || [];
@@ -204,19 +214,21 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 					id: config.id,
 					provider: config.provider,
 					weight: config.weight ?? undefined,
-					allowed_models: config.allowed_models,
+					allowed_models: config.allowed_models || [],
+					blacklisted_models: config.blacklisted_models || [],
 					key_ids: config.allow_all_keys ? ["*"] : config.keys?.map((key) => key.key_id) || [],
 					budgets: config.budgets?.map((b) => ({
+						id: b.id,
 						max_limit: b.max_limit,
 						reset_duration: b.reset_duration,
 					})),
 					rate_limit: config.rate_limit
 						? {
-							token_max_limit: config.rate_limit.token_max_limit ?? undefined,
-							token_reset_duration: config.rate_limit.token_reset_duration,
-							request_max_limit: config.rate_limit.request_max_limit ?? undefined,
-							request_reset_duration: config.rate_limit.request_reset_duration,
-						}
+								token_max_limit: config.rate_limit.token_max_limit ?? undefined,
+								token_reset_duration: config.rate_limit.token_reset_duration,
+								request_max_limit: config.rate_limit.request_max_limit ?? undefined,
+								request_reset_duration: config.rate_limit.request_reset_duration,
+							}
 						: undefined,
 				})) || [],
 			mcpConfigs:
@@ -231,7 +243,11 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 			isActive: virtualKey?.is_active ?? true,
 			budgets:
 				virtualKey?.budgets && virtualKey.budgets.length > 0
-					? virtualKey.budgets.map((b) => ({ max_limit: b.max_limit, reset_duration: b.reset_duration ?? "1M" }))
+					? virtualKey.budgets.map((b) => ({
+							id: b.id,
+							max_limit: b.max_limit,
+							reset_duration: b.reset_duration ?? "1M",
+						}))
 					: [],
 			budgetCalendarAligned: virtualKey?.calendar_aligned ?? false,
 			tokenMaxLimit: virtualKey?.rate_limit?.token_max_limit ?? undefined,
@@ -291,13 +307,22 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 	const watchedBudgets = form.watch("budgets");
 	const watchedTokenMaxLimit = form.watch("tokenMaxLimit");
 	const watchedRequestMaxLimit = form.watch("requestMaxLimit");
+	const watchedTokenResetDuration = form.watch("tokenResetDuration");
+	const watchedRequestResetDuration = form.watch("requestResetDuration");
 	const watchedBudgetCalendarAligned = form.watch("budgetCalendarAligned");
 
-	// Calendar alignment is VK-wide: show toggle if any budget has a max_limit and supports alignment
+	// Calendar alignment is VK-wide and applies to both budgets and rate limits: show the
+	// toggle when any configured budget or rate-limit uses a calendar-alignable duration.
 	const hasAnyAlignableBudget =
 		watchedBudgets &&
 		watchedBudgets.length > 0 &&
 		watchedBudgets.some((b) => b.max_limit !== undefined && b.max_limit !== null && supportsCalendarAlignment(b.reset_duration || "1M"));
+	const hasAnyAlignableRateLimit =
+		(watchedTokenMaxLimit !== undefined && watchedTokenMaxLimit !== null && supportsCalendarAlignment(watchedTokenResetDuration || "1h")) ||
+		(watchedRequestMaxLimit !== undefined &&
+			watchedRequestMaxLimit !== null &&
+			supportsCalendarAlignment(watchedRequestResetDuration || "1h"));
+	const showCalendarAlignToggle = hasAnyAlignableBudget || hasAnyAlignableRateLimit;
 
 	// Handle adding a new provider configuration
 	const handleAddProvider = (provider: string) => {
@@ -311,10 +336,13 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 			provider: provider,
 			weight: undefined as number | undefined, // undefined = excluded from weighted routing until user sets a weight
 			allowed_models: ["*"],
+			blacklisted_models: [],
 			key_ids: ["*"],
 		};
 
-		form.setValue("providerConfigs", [...providerConfigs, newConfig], { shouldDirty: true });
+		form.setValue("providerConfigs", [...providerConfigs, newConfig], {
+			shouldDirty: true,
+		});
 	};
 
 	// Handle removing a provider configuration
@@ -343,7 +371,9 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 			tools_to_execute: ["*"],
 		};
 
-		form.setValue("mcpConfigs", [...mcpConfigs, newConfig], { shouldDirty: true });
+		form.setValue("mcpConfigs", [...mcpConfigs, newConfig], {
+			shouldDirty: true,
+		});
 	};
 
 	// Handle removing an MCP client configuration
@@ -360,6 +390,12 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 	};
 
 	const [showCalendarAlignWarning, setShowCalendarAlignWarning] = useState(false);
+	const [showReassignTeamWarning, setShowReassignTeamWarning] = useState(false);
+	const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
+	const [showRotateWarning, setShowRotateWarning] = useState(false);
+	const [showBudgetResetPrompt, setShowBudgetResetPrompt] = useState(false);
+	const [pendingBudgetResetData, setPendingBudgetResetData] = useState<FormData | null>(null);
+	const [pendingBudgetUsageWarning, setPendingBudgetUsageWarning] = useState<string | null>(null);
 
 	const handleCalendarAlignedChange = (checked: boolean) => {
 		if (checked && isEditing) {
@@ -385,7 +421,7 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 	const normalizeProviderConfigs = (configs: typeof providerConfigs, existingConfigs?: VirtualKey["provider_configs"]): any[] => {
 		return configs.map((config) => ({
 			...config,
-			budgets: config.budgets?.filter((b): b is { max_limit: number; reset_duration: string } => b.max_limit !== undefined),
+			budgets: config.budgets?.filter((b): b is { id?: string; max_limit: number; reset_duration: string } => b.max_limit !== undefined),
 			weight: config.weight ?? null,
 			rate_limit: (() => {
 				const hasTokenMaxLimit = config.rate_limit?.token_max_limit !== undefined;
@@ -409,8 +445,182 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 		}));
 	};
 
-	// Handle form submission
-	const onSubmit = async (data: FormData) => {
+	const budgetSignature = (budgets?: BudgetComparisonEntry[]) =>
+		(budgets || [])
+			.filter((budget) => budget.max_limit !== undefined)
+			.map((budget) => `${budget.id ?? ""}:${budget.max_limit}:${budget.reset_duration ?? ""}`)
+			.sort()
+			.join("|");
+
+	const parseResetDurationMs = (duration?: string) => {
+		if (!duration) return null;
+		const match = duration.match(/^(\d+(?:\.\d+)?)(ms|s|m|h|d|w|M|Y)$/);
+		if (!match) return null;
+		const amount = Number(match[1]);
+		const unit = match[2];
+		const multipliers: Record<string, number> = {
+			ms: 1,
+			s: 1000,
+			m: 60 * 1000,
+			h: 60 * 60 * 1000,
+			d: 24 * 60 * 60 * 1000,
+			w: 7 * 24 * 60 * 60 * 1000,
+			M: 30 * 24 * 60 * 60 * 1000,
+			Y: 365 * 24 * 60 * 60 * 1000,
+		};
+		return amount * multipliers[unit];
+	};
+
+	const formatBudgetAmount = (value: number) =>
+		new Intl.NumberFormat("en-US", {
+			style: "currency",
+			currency: "USD",
+			maximumFractionDigits: 2,
+		}).format(value);
+
+	const findBudgetUsageWarning = (
+		currentBudgets: BudgetComparisonEntry[] | undefined,
+		existingBudgets: BudgetComparisonEntry[] | undefined,
+		scopeLabel: string,
+	) => {
+		const current = (currentBudgets || [])
+			.filter(
+				(
+					budget,
+				): budget is BudgetComparisonEntry & {
+					max_limit: number;
+					reset_duration: string;
+				} => {
+					return budget.max_limit !== undefined && !!budget.reset_duration;
+				},
+			)
+			.sort((left, right) => (parseResetDurationMs(left.reset_duration) ?? 0) - (parseResetDurationMs(right.reset_duration) ?? 0));
+		const existingByID = new Map((existingBudgets || []).filter((budget) => budget.id).map((budget) => [budget.id, budget]));
+		const existingByDuration = new Map((existingBudgets || []).map((budget) => [budget.reset_duration, budget]));
+		const reconciled: BudgetComparisonEntry[] = [];
+
+		for (const budget of current) {
+			const existing = budget.id ? existingByID.get(budget.id) : existingByDuration.get(budget.reset_duration);
+			if (existing) {
+				const configChanged = existing.max_limit !== budget.max_limit || existing.reset_duration !== budget.reset_duration;
+				const usage = existing.current_usage ?? 0;
+				if (configChanged && usage >= budget.max_limit) {
+					return `${scopeLabel} ${budget.reset_duration} budget has ${formatBudgetAmount(usage)} usage, which meets or exceeds the new ${formatBudgetAmount(budget.max_limit)} limit.`;
+				}
+				reconciled.push({ ...budget, current_usage: usage });
+				continue;
+			}
+
+			const targetDuration = parseResetDurationMs(budget.reset_duration);
+			const closestShorter = reconciled.reduce<BudgetComparisonEntry | null>((closest, candidate) => {
+				const candidateDuration = parseResetDurationMs(candidate.reset_duration);
+				const closestDuration = parseResetDurationMs(closest?.reset_duration);
+				if (targetDuration === null || candidateDuration === null || candidateDuration >= targetDuration) {
+					return closest;
+				}
+				if (closest === null || closestDuration === null || candidateDuration > closestDuration) {
+					return candidate;
+				}
+				return closest;
+			}, null);
+			const inheritedUsage = closestShorter?.current_usage ?? 0;
+			if (inheritedUsage >= budget.max_limit) {
+				return `${scopeLabel} ${budget.reset_duration} budget will inherit ${formatBudgetAmount(inheritedUsage)} from the ${closestShorter?.reset_duration} budget, which meets or exceeds the new ${formatBudgetAmount(budget.max_limit)} limit.`;
+			}
+			reconciled.push({ ...budget, current_usage: inheritedUsage });
+		}
+
+		return null;
+	};
+
+	const getBudgetUsageWarning = (data: FormData) => {
+		if (!isEditing || !virtualKey || isManagedByProfile) {
+			return null;
+		}
+
+		const vkWarning = findBudgetUsageWarning(data.budgets, virtualKey.budgets, "Virtual key");
+		if (vkWarning) {
+			return vkWarning;
+		}
+
+		const existingProviderConfigs = new Map<string, NonNullable<VirtualKey["provider_configs"]>[number]>();
+		(virtualKey.provider_configs || []).forEach((config) => {
+			existingProviderConfigs.set(String(config.id ?? config.provider), config);
+		});
+		for (const config of data.providerConfigs || []) {
+			const existingConfig = existingProviderConfigs.get(String(config.id ?? config.provider));
+			const providerLabel = ProviderLabels[config.provider as ProviderName] ?? config.provider;
+			const warning = findBudgetUsageWarning(config.budgets, existingConfig?.budgets, `${providerLabel} provider`);
+			if (warning) {
+				return warning;
+			}
+		}
+
+		return null;
+	};
+
+	const hasBudgetResetRelevantChanges = (data: FormData) => {
+		if (!isEditing || !virtualKey || isManagedByProfile) {
+			return false;
+		}
+
+		const currentBudgets = (data.budgets || []).filter(
+			(budget): budget is { id?: string; max_limit: number; reset_duration: string } => budget.max_limit !== undefined,
+		);
+		const existingBudgets = virtualKey.budgets || [];
+		const hasBudgetFields =
+			currentBudgets.length > 0 ||
+			existingBudgets.length > 0 ||
+			(data.providerConfigs || []).some((config) => (config.budgets || []).some((budget) => budget.max_limit !== undefined)) ||
+			(virtualKey.provider_configs || []).some((config) => (config.budgets || []).length > 0);
+
+		if (budgetSignature(currentBudgets) !== budgetSignature(existingBudgets)) {
+			return true;
+		}
+
+		if (hasBudgetFields && data.budgetCalendarAligned !== (virtualKey.calendar_aligned ?? false)) {
+			return true;
+		}
+
+		const existingProviderConfigs = new Map<string, NonNullable<VirtualKey["provider_configs"]>[number]>();
+		(virtualKey.provider_configs || []).forEach((config) => {
+			existingProviderConfigs.set(String(config.id ?? config.provider), config);
+		});
+
+		const currentProviderConfigs = new Map<string, NonNullable<FormData["providerConfigs"]>[number]>();
+		(data.providerConfigs || []).forEach((config) => {
+			currentProviderConfigs.set(String(config.id ?? config.provider), config);
+		});
+
+		const providerConfigKeys = new Set([...existingProviderConfigs.keys(), ...currentProviderConfigs.keys()]);
+		for (const key of providerConfigKeys) {
+			const currentSignature = budgetSignature(currentProviderConfigs.get(key)?.budgets);
+			const existingSignature = budgetSignature(existingProviderConfigs.get(key)?.budgets);
+			if (currentSignature !== existingSignature) {
+				return true;
+			}
+		}
+
+		return false;
+	};
+
+	const handleRotateVirtualKey = async () => {
+		if (!virtualKey) return;
+		if (!hasUpdateAccess) {
+			toast.error("You don't have permission to perform this action");
+			return;
+		}
+		try {
+			await rotateVirtualKey(virtualKey.id).unwrap();
+			toast.success("Virtual key rotated successfully");
+			setShowRotateWarning(false);
+			onSave();
+		} catch (error) {
+			toast.error(getErrorMessage(error));
+		}
+	};
+
+	const submitVirtualKeyForm = async (data: FormData, resetBudgetUsage = false) => {
 		if (!canSubmit) {
 			toast.error("You don't have permission to perform this action");
 			return;
@@ -441,22 +651,36 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 					description: data.description,
 					provider_configs: normalizedProviderConfigs,
 					mcp_configs: data.mcpConfigs,
-					team_id: data.entityType === "team" && data.teamId && data.teamId.trim() !== "" ? data.teamId : undefined,
-					customer_id: data.entityType === "customer" && data.customerId && data.customerId.trim() !== "" ? data.customerId : undefined,
+					team_id:
+						assignedUsers.length > 0
+							? undefined
+							: data.entityType === "team" && data.teamId && data.teamId.trim() !== ""
+								? data.teamId
+								: data.entityType === "none"
+									? null
+									: undefined,
+					customer_id:
+						assignedUsers.length > 0
+							? undefined
+							: data.entityType === "customer" && data.customerId && data.customerId.trim() !== ""
+								? data.customerId
+								: data.entityType === "none"
+									? null
+									: undefined,
 					is_active: data.isActive,
+					calendar_aligned: data.budgetCalendarAligned,
+					reset_budget_usage: resetBudgetUsage,
 				};
 
 				// Add budgets if enabled
 				const validBudgets = (data.budgets || []).filter(
-					(b): b is { max_limit: number; reset_duration: string } => b.max_limit !== undefined,
+					(b): b is { id?: string; max_limit: number; reset_duration: string } => b.max_limit !== undefined,
 				);
 				const hadBudget = virtualKey.budgets && virtualKey.budgets.length > 0;
 				if (validBudgets.length > 0) {
 					updateData.budgets = validBudgets;
-					updateData.calendar_aligned = data.budgetCalendarAligned;
 				} else if (hadBudget) {
 					updateData.budgets = [];
-					updateData.calendar_aligned = false;
 				}
 
 				// Add rate limit if enabled
@@ -475,7 +699,10 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 					updateData.rate_limit = {};
 				}
 
-				await updateVirtualKey({ vkId: virtualKey.id, data: updateData }).unwrap();
+				await updateVirtualKey({
+					vkId: virtualKey.id,
+					data: updateData,
+				}).unwrap();
 				toast.success("Virtual key updated successfully");
 			} else {
 				// Create new virtual key
@@ -487,15 +714,16 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 					team_id: data.entityType === "team" && data.teamId && data.teamId.trim() !== "" ? data.teamId : undefined,
 					customer_id: data.entityType === "customer" && data.customerId && data.customerId.trim() !== "" ? data.customerId : undefined,
 					is_active: data.isActive,
+					// VK-level setting that governs both budget and rate-limit calendar alignment.
+					calendar_aligned: data.budgetCalendarAligned,
 				};
 
 				// Add budgets if enabled
 				const validBudgets = (data.budgets || []).filter(
-					(b): b is { max_limit: number; reset_duration: string } => b.max_limit !== undefined,
+					(b): b is { id?: string; max_limit: number; reset_duration: string } => b.max_limit !== undefined,
 				);
 				if (validBudgets.length > 0) {
 					createData.budgets = validBudgets;
-					createData.calendar_aligned = data.budgetCalendarAligned;
 				}
 
 				// Add rate limit if enabled
@@ -515,9 +743,34 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 			}
 
 			onSave();
-		} catch (error) {
+		} catch (error: any) {
+			if (error?.status === 409) {
+				form.setError("name", { message: getErrorMessage(error) });
+				return;
+			}
 			toast.error(getErrorMessage(error));
 		}
+	};
+
+	// Handle form submission
+	const onSubmit = async (data: FormData) => {
+		if (hasBudgetResetRelevantChanges(data)) {
+			setPendingBudgetResetData(data);
+			setPendingBudgetUsageWarning(getBudgetUsageWarning(data));
+			setShowBudgetResetPrompt(true);
+			return;
+		}
+
+		await submitVirtualKeyForm(data, false);
+	};
+
+	const handleBudgetResetChoice = async (resetBudgetUsage: boolean) => {
+		if (!pendingBudgetResetData) return;
+		const data = pendingBudgetResetData;
+		setPendingBudgetResetData(null);
+		setPendingBudgetUsageWarning(null);
+		setShowBudgetResetPrompt(false);
+		await submitVirtualKeyForm(data, resetBudgetUsage);
 	};
 
 	return (
@@ -528,7 +781,7 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 				onInteractOutside={(e) => e.preventDefault()}
 				onEscapeKeyDown={() => handleClose()}
 			>
-				<SheetHeader className="flex flex-col items-start px-8 py-4" headerClassName="mb-0 sticky -top-4 bg-card z-10">
+				<SheetHeader className="flex flex-col items-start px-0 py-4" headerClassName="mb-0 sticky -top-4 bg-card z-10 px-8">
 					<SheetTitle className="flex items-center gap-2">{isEditing ? virtualKey?.name : "Create Virtual Key"}</SheetTitle>
 					<SheetDescription>
 						{isEditing
@@ -539,7 +792,7 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 
 				<Form {...form}>
 					<form onSubmit={form.handleSubmit(onSubmit)} className="flex h-full flex-col gap-6">
-						<div className="space-y-4 px-8">
+						<div className="grow space-y-4 px-8">
 							{isManagedByProfile && (
 								<Alert variant="info">
 									<Lock className="h-4 w-4" />
@@ -554,19 +807,8 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 								<Alert variant="info">
 									<Users className="h-4 w-4" />
 									<AlertDescription>
-										<p>
-											This virtual key is attached to team{" "}
-											<a
-												data-testid="vk-team-link"
-												href={`/workspace/governance/teams?team=${encodeURIComponent(attachedTeamId)}`}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="font-medium underline underline-offset-2 hover:no-underline"
-											>
-												{attachedTeam?.name ?? virtualKey?.team?.name ?? attachedTeamId}
-											</a>
-											. The team assignment can't be changed here — all other fields remain editable.
-										</p>
+										Creating this virtual key under team <span className="font-medium">{attachedTeam?.name ?? attachedTeamId}</span>. Team
+										assignment is pre-set — all other fields are editable.
 									</AlertDescription>
 								</Alert>
 							)}
@@ -817,7 +1059,7 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 																								? "No models (deny all)"
 																								: config.provider
 																									? ModelPlaceholders[config.provider as keyof typeof ModelPlaceholders] ||
-																									ModelPlaceholders.default
+																										ModelPlaceholders.default
 																									: ModelPlaceholders.default
 																					}
 																					className="min-h-10 max-w-[500px] min-w-[200px]"
@@ -827,6 +1069,72 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 																		<p className="text-muted-foreground text-xs">
 																			Select specific models or choose “Allow All Models” to allow all. Leave empty to deny all.
 																		</p>
+																	</div>
+																</div>
+
+																{/* Blocked Models for this provider */}
+																<div className="flex w-full items-start gap-2">
+																	<div className="w-1/4" />
+																	<div className="w-3/4 space-y-2">
+																		<div className="flex items-center gap-2">
+																			<Label className="text-sm font-medium">Blocked Models</Label>
+																			<TooltipProvider>
+																				<Tooltip>
+																					<TooltipTrigger asChild>
+																						<span>
+																							<Info className="text-muted-foreground h-3 w-3" />
+																						</span>
+																					</TooltipTrigger>
+																					<TooltipContent>
+																						<p>
+																							Models this VK must never serve. The denylist wins if a model appears in both Allowed Models
+																							and Blocked Models.
+																						</p>
+																					</TooltipContent>
+																				</Tooltip>
+																			</TooltipProvider>
+																		</div>
+																		{(() => {
+																			const hasWildcardBlocked = (config.blacklisted_models || []).includes("*");
+																			return (
+																				<ModelMultiselect
+																					data-testid={`vk-models-blocked-multiselect-${index}`}
+																					provider={config.provider}
+																					keys={(() => {
+																						const providerKeys = availableKeys.filter((key) => key.provider === config.provider);
+																						const configKeyIds = config.key_ids || [];
+																						return configKeyIds.includes("*")
+																							? providerKeys.map((key) => key.key_id)
+																							: providerKeys.filter((key) => configKeyIds.includes(key.key_id)).map((key) => key.key_id);
+																					})()}
+																					allowAllOption={true}
+																					value={hasWildcardBlocked ? ["*"] : config.blacklisted_models || []}
+																					onChange={(models: string[]) => {
+																						const hadStar = (config.blacklisted_models || []).includes("*");
+																						const hasStar = models.includes("*");
+																						if (!hadStar && hasStar) {
+																							handleUpdateProviderConfig(index, "blacklisted_models", ["*"]);
+																						} else if (hadStar && hasStar && models.length > 1) {
+																							handleUpdateProviderConfig(
+																								index,
+																								"blacklisted_models",
+																								models.filter((m) => m !== "*"),
+																							);
+																						} else {
+																							handleUpdateProviderConfig(index, "blacklisted_models", models);
+																						}
+																					}}
+																					placeholder={
+																						hasWildcardBlocked
+																							? "All models blocked"
+																							: (config.blacklisted_models || []).length === 0
+																								? "No models blocked"
+																								: "Search models..."
+																					}
+																					className="min-h-10 max-w-[500px] min-w-[200px]"
+																				/>
+																			);
+																		})()}
 																	</div>
 																</div>
 
@@ -855,16 +1163,16 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 																	const selectedProviderKeys = hasWildcard
 																		? [allKeyOptions[0]]
 																		: providerKeys
-																			.filter((key) => configKeyIds.includes(key.key_id))
-																			.map((key) => ({
-																				label: key.name,
-																				value: key.key_id,
-																				description:
-																					key.models == null || key.models.includes("*")
-																						? "All models"
-																						: key.models.filter((m) => m !== "*").join(", ") || "No models (deny all)",
-																				provider: key.provider,
-																			}));
+																				.filter((key) => configKeyIds.includes(key.key_id))
+																				.map((key) => ({
+																					label: key.name,
+																					value: key.key_id,
+																					description:
+																						key.models == null || key.models.includes("*")
+																							? "All models"
+																							: key.models.filter((m) => m !== "*").join(", ") || "No models (deny all)",
+																					provider: key.provider,
+																				}));
 
 																	return (
 																		<div className="mx-0.5 space-y-2">
@@ -958,15 +1266,15 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 
 																{/* Provider Budget Configuration */}
 																<MultiBudgetLines
-																	id={`providerBudget-${index}`}
 																	data-testid={`vk-provider-budget-${index}`}
 																	label="Provider Budget"
 																	lines={
 																		config.budgets && config.budgets.length > 0
 																			? config.budgets.map((b) => ({
-																				max_limit: b.max_limit,
-																				reset_duration: b.reset_duration || "1M",
-																			}))
+																					id: b.id,
+																					max_limit: b.max_limit,
+																					reset_duration: b.reset_duration || "1M",
+																				}))
 																			: []
 																	}
 																	onChange={(lines) => {
@@ -974,6 +1282,7 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 																		updatedConfigs[index] = {
 																			...updatedConfigs[index],
 																			budgets: lines.map((l) => ({
+																				id: l.id,
 																				max_limit: l.max_limit,
 																				reset_duration: l.reset_duration,
 																			})),
@@ -1244,7 +1553,6 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 								{/* Budget Configuration */}
 								<div className="space-y-4">
 									<MultiBudgetLines
-										id="vkBudget"
 										data-testid="vk-budget-lines"
 										label="Budget Configuration"
 										lines={form.watch("budgets") ?? []}
@@ -1255,49 +1563,41 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 										showReset={isEditing && !!(virtualKey?.budgets?.length || (watchedBudgets && watchedBudgets.length > 0))}
 									/>
 
-									{/* Calendar alignment toggle — shown when any budget supports alignment */}
-									{hasAnyAlignableBudget && (
-										<div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2">
-											<div className="space-y-0.5">
-												<Label htmlFor="vk-budget-calendar-aligned-toggle" className="text-sm font-normal">
-													Align to calendar cycle
-												</Label>
-												<p id="vk-budget-calendar-aligned-description" className="text-muted-foreground text-xs">
-													Reset at the start of each period (e.g. 1st of month) instead of rolling from creation date
-												</p>
-											</div>
-											<Switch
-												id="vk-budget-calendar-aligned-toggle"
-												aria-describedby="vk-budget-calendar-aligned-description"
-												checked={watchedBudgetCalendarAligned}
-												onCheckedChange={handleCalendarAlignedChange}
-												data-testid="vk-budget-calendar-aligned-toggle"
-											/>
-										</div>
-									)}
-
-									{/* Warning dialog shown when enabling calendar alignment on an existing budget */}
-									<AlertDialog open={showCalendarAlignWarning} onOpenChange={setShowCalendarAlignWarning}>
+									{/* Reassign team confirmation dialog */}
+									<AlertDialog
+										open={showReassignTeamWarning}
+										onOpenChange={(open) => {
+											setShowReassignTeamWarning(open);
+											if (!open) {
+												setPendingTeamId(null);
+											}
+										}}
+									>
 										<AlertDialogContent>
 											<AlertDialogHeader>
-												<AlertDialogTitle>Reset budget usage?</AlertDialogTitle>
+												<AlertDialogTitle>Reassign to a different team?</AlertDialogTitle>
 												<AlertDialogDescription>
-													Enabling calendar alignment will reset all budget usage for this virtual key to{" "}
-													<span className="font-semibold">$0.00</span> and snap each budget&apos;s reset date to the start of its current
-													period (e.g. start of day, week, month, or year). The usage reset to $0.00 cannot be undone, but calendar
-													alignment can be turned off later. This will take effect when you save.
+													This key is currently assigned to another team. Reassigning it will move budget tracking to this team — future
+													requests through this key will count against this team’s budget, not the previous one.
 												</AlertDialogDescription>
 											</AlertDialogHeader>
 											<AlertDialogFooter>
-												<AlertDialogCancel data-testid="vk-calendar-align-cancel-btn">Cancel</AlertDialogCancel>
+												<AlertDialogCancel data-testid="virtual-key-reassign-cancel" onClick={() => setPendingTeamId(null)}>
+													Cancel
+												</AlertDialogCancel>
 												<AlertDialogAction
-													data-testid="vk-calendar-align-enable-btn"
+													data-testid="virtual-key-reassign-confirm"
 													onClick={() => {
-														form.setValue("budgetCalendarAligned", true, { shouldDirty: true });
-														setShowCalendarAlignWarning(false);
+														if (pendingTeamId !== null) {
+															form.setValue("teamId", pendingTeamId, {
+																shouldDirty: true,
+															});
+														}
+														setPendingTeamId(null);
+														setShowReassignTeamWarning(false);
 													}}
 												>
-													Enable Calendar Alignment
+													Reassign
 												</AlertDialogAction>
 											</AlertDialogFooter>
 										</AlertDialogContent>
@@ -1335,7 +1635,11 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 													onChangeNumber={(value) => {
 														field.onChange(value);
 													}}
-													onChangeSelect={(value) => form.setValue("tokenResetDuration", value, { shouldDirty: true })}
+													onChangeSelect={(value) =>
+														form.setValue("tokenResetDuration", value, {
+															shouldDirty: true,
+														})
+													}
 													options={resetDurationOptions}
 												/>
 												<FormMessage />
@@ -1357,7 +1661,11 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 													onChangeNumber={(value) => {
 														field.onChange(value);
 													}}
-													onChangeSelect={(value) => form.setValue("requestResetDuration", value, { shouldDirty: true })}
+													onChangeSelect={(value) =>
+														form.setValue("requestResetDuration", value, {
+															shouldDirty: true,
+														})
+													}
 													options={resetDurationOptions}
 												/>
 												<FormMessage />
@@ -1365,6 +1673,56 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 										)}
 									/>
 								</div>
+								{/* Calendar alignment — VK-wide setting that applies to both budgets and rate limits */}
+								{showCalendarAlignToggle && (
+									<div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2">
+										<div className="space-y-0.5">
+											<Label htmlFor="vk-budget-calendar-aligned-toggle" className="text-sm font-normal">
+												Align to calendar cycle
+											</Label>
+											<p id="vk-budget-calendar-aligned-description" className="text-muted-foreground text-xs">
+												Reset budgets and rate limits at the start of each period (e.g. 1st of month) instead of rolling from creation date.
+												Applies to durations of a day or longer.
+											</p>
+										</div>
+										<Switch
+											id="vk-budget-calendar-aligned-toggle"
+											aria-describedby="vk-budget-calendar-aligned-description"
+											checked={watchedBudgetCalendarAligned}
+											onCheckedChange={handleCalendarAlignedChange}
+											data-testid="vk-budget-calendar-aligned-toggle"
+										/>
+									</div>
+								)}
+
+								{/* Warning dialog shown when enabling calendar alignment on an existing VK */}
+								<AlertDialog open={showCalendarAlignWarning} onOpenChange={setShowCalendarAlignWarning}>
+									<AlertDialogContent>
+										<AlertDialogHeader>
+											<AlertDialogTitle>Reset budget and rate-limit usage?</AlertDialogTitle>
+											<AlertDialogDescription>
+												Enabling calendar alignment will reset budget usage to <span className="font-semibold">$0.00</span> and
+												token/request rate-limit counters to <span className="font-semibold">0</span> for this virtual key, then snap each
+												reset date to the start of its current period (e.g. start of day, week, month, or year). The usage reset cannot be
+												undone, but calendar alignment can be turned off later. This will take effect when you save.
+											</AlertDialogDescription>
+										</AlertDialogHeader>
+										<AlertDialogFooter>
+											<AlertDialogCancel data-testid="vk-calendar-align-cancel-btn">Cancel</AlertDialogCancel>
+											<AlertDialogAction
+												data-testid="vk-calendar-align-enable-btn"
+												onClick={() => {
+													form.setValue("budgetCalendarAligned", true, {
+														shouldDirty: true,
+													});
+													setShowCalendarAlignWarning(false);
+												}}
+											>
+												Enable Calendar Alignment
+											</AlertDialogAction>
+										</AlertDialogFooter>
+									</AlertDialogContent>
+								</AlertDialog>
 								{(teams?.length > 0 || customers?.length > 0) && (
 									<>
 										<DottedSeparator className="my-6" />
@@ -1383,33 +1741,71 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 															<ComboboxSelect
 																options={[
 																	{ value: "none", label: "No Assignment" },
-																	...(teams?.length > 0 ? [{ value: "team", label: "Assign to Team" }] : []),
-																	...(customers?.length > 0 ? [{ value: "customer", label: "Assign to Customer" }] : []),
+																	...(teams?.length > 0
+																		? [
+																				{
+																					value: "team",
+																					label: "Assign to Team",
+																				},
+																			]
+																		: []),
+																	...(customers?.length > 0
+																		? [
+																				{
+																					value: "customer",
+																					label: "Assign to Customer",
+																				},
+																			]
+																		: []),
 																]}
 																value={field.value}
 																onValueChange={async (value) => {
 																	const val = value ?? "none";
 																	field.onChange(val);
 																	if (val === "team" && teams?.length > 0) {
-																		form.setValue("teamId", teams[0].id, { shouldDirty: true, shouldValidate: true });
-																		form.setValue("customerId", "", { shouldDirty: true, shouldValidate: true });
+																		form.setValue("teamId", teams[0].id, {
+																			shouldDirty: true,
+																			shouldValidate: true,
+																		});
+																		form.setValue("customerId", "", {
+																			shouldDirty: true,
+																			shouldValidate: true,
+																		});
 																		await form.trigger(["teamId", "customerId", "entityType"]);
 																	} else if (val === "customer" && customers?.length > 0) {
-																		form.setValue("customerId", customers[0].id, { shouldDirty: true, shouldValidate: true });
-																		form.setValue("teamId", "", { shouldDirty: true, shouldValidate: true });
+																		form.setValue("customerId", customers[0].id, {
+																			shouldDirty: true,
+																			shouldValidate: true,
+																		});
+																		form.setValue("teamId", "", {
+																			shouldDirty: true,
+																			shouldValidate: true,
+																		});
 																		await form.trigger(["teamId", "customerId", "entityType"]);
 																	} else {
-																		form.setValue("teamId", "", { shouldDirty: true, shouldValidate: true });
-																		form.setValue("customerId", "", { shouldDirty: true, shouldValidate: true });
+																		form.setValue("teamId", "", {
+																			shouldDirty: true,
+																			shouldValidate: true,
+																		});
+																		form.setValue("customerId", "", {
+																			shouldDirty: true,
+																			shouldValidate: true,
+																		});
 																		await form.trigger(["teamId", "customerId", "entityType"]);
 																	}
 																}}
-																disabled={isTeamLocked}
+																disabled={isTeamLocked || (isEditing && assignedUsers.length > 0)}
 																disableSearch
 																hideClear
 																className="h-9"
 															/>
-															<FormMessage />
+															{isEditing && assignedUsers.length > 0 ? (
+																<p className="text-muted-foreground text-xs">
+																	This key is assigned to a user. Detach the user first to change the assignment type.
+																</p>
+															) : (
+																<FormMessage />
+															)}
 														</FormItem>
 													)}
 												/>
@@ -1426,9 +1822,17 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 																		label: team.customer ? `${team.name} — ${team.customer.name}` : team.name,
 																	}))}
 																	value={field.value || null}
-																	onValueChange={(val) => field.onChange(val ?? "")}
+																	onValueChange={(val) => {
+																		const newVal = val ?? "";
+																		if (isEditing && virtualKey?.team_id && newVal && newVal !== virtualKey.team_id) {
+																			setPendingTeamId(newVal);
+																			setShowReassignTeamWarning(true);
+																		} else {
+																			field.onChange(newVal);
+																		}
+																	}}
 																	placeholder="Select a team"
-																	disabled={isTeamLocked}
+																	disabled={isTeamLocked || (isEditing && assignedUsers.length > 0)}
 																	emptyMessage="No teams found."
 																	className="h-9"
 																/>
@@ -1453,6 +1857,7 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 																	value={field.value || null}
 																	onValueChange={(val) => field.onChange(val ?? "")}
 																	placeholder="Select a customer"
+																	disabled={isEditing && assignedUsers.length > 0}
 																	emptyMessage="No customers found."
 																	className="h-9"
 																/>
@@ -1467,6 +1872,44 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 								)}
 							</fieldset>
 						</div>
+						<AlertDialog open={showRotateWarning} onOpenChange={setShowRotateWarning}>
+							<AlertDialogContent>
+								<AlertDialogHeader>
+									<AlertDialogTitle>Rotate virtual key?</AlertDialogTitle>
+									<AlertDialogDescription>
+										This will replace the secret value for &quot;
+										{virtualKey?.name}&quot;. The key ID, budgets, rate limits, provider permissions, MCP access, and assignments stay the
+										same. The previous key value will stop working immediately.
+									</AlertDialogDescription>
+								</AlertDialogHeader>
+								<AlertDialogFooter>
+									<AlertDialogCancel data-testid="vk-rotate-cancel-btn">Cancel</AlertDialogCancel>
+									<AlertDialogAction onClick={handleRotateVirtualKey} disabled={isRotating} data-testid="vk-rotate-confirm-btn">
+										{isRotating ? "Rotating..." : "Rotate Key"}
+									</AlertDialogAction>
+								</AlertDialogFooter>
+							</AlertDialogContent>
+						</AlertDialog>
+						<AlertDialog open={showBudgetResetPrompt} onOpenChange={setShowBudgetResetPrompt}>
+							<AlertDialogContent data-testid="vk-budget-reset-dialog">
+								<AlertDialogHeader>
+									<AlertDialogTitle>{pendingBudgetUsageWarning ? "Preserve over-limit usage?" : "Reset budget usage?"}</AlertDialogTitle>
+									<AlertDialogDescription>
+										{pendingBudgetUsageWarning
+											? `${pendingBudgetUsageWarning} You can preserve usage anyway, or reset usage to 0.`
+											: "You changed a budget amount, reset frequency, or calendar alignment. Reset current budget usage to 0, or preserve the existing usage counters."}
+									</AlertDialogDescription>
+								</AlertDialogHeader>
+								<AlertDialogFooter>
+									<AlertDialogCancel onClick={() => handleBudgetResetChoice(false)} data-testid="vk-budget-reset-preserve-btn">
+										{pendingBudgetUsageWarning ? "Preserve Anyway" : "Preserve Usage"}
+									</AlertDialogCancel>
+									<AlertDialogAction onClick={() => handleBudgetResetChoice(true)} data-testid="vk-budget-reset-confirm-btn">
+										Reset Usage
+									</AlertDialogAction>
+								</AlertDialogFooter>
+							</AlertDialogContent>
+						</AlertDialog>
 						{isEditing && virtualKey?.config_hash && (
 							<div className="px-8">
 								<ConfigSyncAlert className="mt-2" />
@@ -1474,34 +1917,50 @@ export default function VirtualKeySheet({ virtualKey, teams, customers, defaultT
 						)}
 						{/* Form Footer */}
 						<div className="border-border bg-card sticky bottom-0 z-10 border-t px-8 py-4">
-							<div className="flex justify-end gap-2">
-								<Button type="button" variant="outline" onClick={handleClose} data-testid="vk-cancel-btn">
-									Cancel
-								</Button>
-								<TooltipProvider>
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<span className="inline-block">
-												<Button type="submit" disabled={isLoading || !form.formState.isDirty || !canSubmit} data-testid="vk-save-btn">
-													{isLoading ? "Saving..." : isEditing ? "Update" : "Create"}
-												</Button>
-											</span>
-										</TooltipTrigger>
-										{(isLoading || !form.formState.isDirty || !canSubmit) && (
-											<TooltipContent>
-												<p>
-													{!canSubmit
-														? "You don't have permission to perform this action"
-														: isLoading
-															? "Saving..."
-															: !form.formState.isDirty
-																? "No changes made"
-																: ""}
-												</p>
-											</TooltipContent>
-										)}
-									</Tooltip>
-								</TooltipProvider>
+							<div className="flex items-center justify-between gap-2">
+								{isEditing ? (
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => setShowRotateWarning(true)}
+										disabled={!hasUpdateAccess || isRotating}
+										data-testid="vk-rotate-btn"
+									>
+										<RotateCcw className="h-4 w-4" />
+										{isRotating ? "Rotating..." : "Rotate Key"}
+									</Button>
+								) : (
+									<span />
+								)}
+								<div className="flex justify-end gap-2">
+									<Button type="button" variant="outline" onClick={handleClose} data-testid="vk-cancel-btn">
+										Cancel
+									</Button>
+									<TooltipProvider>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span className="inline-block">
+													<Button type="submit" disabled={isLoading || !form.formState.isDirty || !canSubmit} data-testid="vk-save-btn">
+														{isLoading ? "Saving..." : isEditing ? "Update" : "Create"}
+													</Button>
+												</span>
+											</TooltipTrigger>
+											{(isLoading || !form.formState.isDirty || !canSubmit) && (
+												<TooltipContent>
+													<p>
+														{!canSubmit
+															? "You don't have permission to perform this action"
+															: isLoading
+																? "Saving..."
+																: !form.formState.isDirty
+																	? "No changes made"
+																	: ""}
+													</p>
+												</TooltipContent>
+											)}
+										</Tooltip>
+									</TooltipProvider>
+								</div>
 							</div>
 						</div>
 					</form>
