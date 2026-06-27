@@ -6,6 +6,7 @@
  * - Dynamic port resolution
  * - URL generation for API calls and WebSocket connections
  * - Automatic protocol detection (http/https, ws/wss)
+ * - Cross-origin deployments via VITE_BIFROST_API_BASE_URL
  */
 
 interface PortConfig {
@@ -16,10 +17,45 @@ interface PortConfig {
 	host: string;
 }
 
+function normalizeApiOrigin(origin: string): string {
+	return origin.trim().replace(/\/+$/, "");
+}
+
+/**
+ * Optional explicit Bifrost gateway origin for split UI/API hosting (e.g. Vercel).
+ * Example: https://bifrost.example.com
+ */
+function getConfiguredApiOrigin(): string | null {
+	const configured = process.env.VITE_BIFROST_API_BASE_URL;
+	if (!configured || configured.trim() === "") {
+		return null;
+	}
+
+	return normalizeApiOrigin(configured);
+}
+
+function getConfiguredPortConfig(origin: string): PortConfig {
+	const url = new URL(origin);
+	const isHttps = url.protocol === "https:";
+
+	return {
+		port: url.port || (isHttps ? "443" : "80"),
+		isDevelopment: false,
+		baseUrl: origin,
+		wsUrl: `${isHttps ? "wss:" : "ws:"}//${url.host}`,
+		host: url.host,
+	};
+}
+
 /**
  * Gets the current port configuration based on environment
  */
 function getPortConfig(): PortConfig {
+	const configuredOrigin = getConfiguredApiOrigin();
+	if (configuredOrigin) {
+		return getConfiguredPortConfig(configuredOrigin);
+	}
+
 	const isDevelopment = process.env.NODE_ENV === "development";
 
 	if (isDevelopment) {
@@ -74,10 +110,14 @@ export function getApiBaseUrl(): string {
 
 	if (config.isDevelopment) {
 		return `${config.baseUrl}/api`;
-	} else {
-		// Production mode: use relative URL for API calls
-		return "/api";
 	}
+
+	if (getConfiguredApiOrigin()) {
+		return `${config.baseUrl}/api`;
+	}
+
+	// Production mode: use relative URL for API calls
+	return "/api";
 }
 
 /**
@@ -118,10 +158,10 @@ export function getEndpointUrl(endpoint: string): string {
 	const config = getPortConfig();
 	const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
 
-	if (config.isDevelopment) {
+	if (config.isDevelopment || getConfiguredApiOrigin()) {
 		return `${config.baseUrl}${cleanEndpoint}`;
-	} else {
-		// Production mode: use relative URLs
-		return cleanEndpoint;
 	}
+
+	// Production mode: use relative URLs
+	return cleanEndpoint;
 }
