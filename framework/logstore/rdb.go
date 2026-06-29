@@ -77,6 +77,13 @@ func generateBucketTimestamps(startTime, endTime *time.Time, bucketSizeSeconds i
 // on ctx pre-applied. Use this in read paths that should respect
 // caller-driven row visibility; use s.db.WithContext(ctx) for writes
 // and internal lookups that must bypass scoping.
+//
+// SECURITY NOTE: A missing or wrong-typed scope on ctx currently
+// falls through to an unscoped DB (legacy behavior preserved by this
+// release). Callers that need a hard guarantee against cross-tenant
+// leaks should consume queryscope.RequireFromContext directly and
+// refuse to issue a query when ErrMissingScope is returned. A
+// follow-up release will wire ScopedDB through that strict primitive.
 func (s *RDBLogStore) ScopedDB(ctx context.Context) *gorm.DB {
 	db := s.db.WithContext(ctx)
 	if scope := queryscope.FromContext(ctx); scope != nil {
