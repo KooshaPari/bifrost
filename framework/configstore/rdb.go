@@ -306,6 +306,13 @@ func (s *RDBConfigStore) DB() *gorm.DB {
 // pre-applied. Use this in read paths that should respect caller-
 // driven row visibility. Use DB().WithContext(ctx) for writes and for
 // internal lookups (e.g. inference VK auth) that must bypass scoping.
+//
+// SECURITY NOTE: A missing or wrong-typed scope on ctx currently
+// falls through to the unscoped DB (legacy behavior preserved by this
+// release). Callers that need a hard guarantee against cross-tenant
+// leaks should consume queryscope.RequireFromContext directly and
+// refuse to issue a query when ErrMissingScope is returned. A
+// follow-up release will wire ScopedDB through that strict primitive.
 func (s *RDBConfigStore) ScopedDB(ctx context.Context) *gorm.DB {
 	db := s.DB().WithContext(ctx)
 	if scope := queryscope.FromContext(ctx); scope != nil {
