@@ -1,3 +1,9 @@
+# zz-aa-dep
+
+Owned hard fork dependency for a project/product. zz prefix for readability/ordering. Code preserved.
+
+---
+
 > **Work state:** MAINTENANCE · **Progress:** `██████░░░░ 60%`
 > Vendored Go AI-gateway fork (maximhq/bifrost); routing-convergence candidate · updated 2026-06-02
 
